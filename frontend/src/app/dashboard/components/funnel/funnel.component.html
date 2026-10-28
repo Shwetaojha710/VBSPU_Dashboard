@@ -1,0 +1,11 @@
+@let d = data();
+<a class="panel" [routerLink]="'/' + d.link" [attr.aria-label]="d.title">
+  <h2 class="title">{{ d.title }}</h2>
+  <svg class="chart" viewBox="0 0 394 232" aria-hidden="true">
+    @for (band of bands(); track band.label) {
+      <polygon [attr.points]="band.points" [attr.fill]="band.color" />
+      <text class="chart__label" [attr.x]="centerX" [attr.y]="band.centerY" text-anchor="middle" dominant-baseline="central">{{ band.label }} {{ band.value }}</text>
+      <text class="chart__percent" [attr.x]="percentX" [attr.y]="band.centerY" text-anchor="end" dominant-baseline="central">{{ band.percent }}</text>
+    }
+  </svg>
+</a>

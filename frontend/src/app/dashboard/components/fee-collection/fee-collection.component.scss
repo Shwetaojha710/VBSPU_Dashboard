@@ -1,0 +1,115 @@
+:host {
+  display: block;
+  min-width: 0;
+}
+
+.panel {
+  height: 219px;
+  padding: 14px 14px 0;
+  border: 1px solid var(--color-border-panel);
+  border-radius: var(--radius-panel);
+  background: var(--color-surface);
+}
+
+.panel__title {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 500;
+  line-height: 17px;
+  white-space: nowrap;
+}
+
+.row,
+.axis {
+  display: flex;
+  align-items: center;
+}
+
+.row--collected {
+  margin-top: 47px;
+}
+
+.row--target {
+  margin-top: 48px;
+}
+
+.row__label {
+  flex: none;
+  width: 91px;
+  color: var(--color-text-secondary);
+  font-size: 13px;
+  line-height: 16px;
+  white-space: nowrap;
+}
+
+.row__track,
+.axis__scale {
+  position: relative;
+  flex: 0 1 279px;
+  min-width: 0;
+  height: 16px;
+}
+
+.bar {
+  position: absolute;
+  inset: 0 auto 0 0;
+  border-radius: 2px;
+}
+
+.bar--collected {
+  background: linear-gradient(90deg, #08ad9f 0%, #77d7c4 100%);
+}
+
+.bar--target {
+  background: linear-gradient(90deg, #278de3 0%, #b0dfef 100%);
+}
+
+.row__value {
+  position: absolute;
+  top: 0;
+  display: flex;
+  gap: 13px;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 16px;
+  white-space: nowrap;
+}
+
+.row__value--collected {
+  margin-left: 13px;
+  color: var(--color-teal);
+}
+
+.row__value--target {
+  margin-left: 16px;
+  color: var(--color-blue);
+}
+
+.row__percent {
+  color: var(--color-text-primary);
+}
+
+.axis {
+  margin-top: 21px;
+  align-items: flex-start;
+}
+
+.axis .row__label {
+  padding-top: 7px;
+  font-size: 12px;
+  line-height: 12px;
+}
+
+.axis__scale {
+  height: 20px;
+  border-top: 1px solid var(--color-axis-light);
+}
+
+.axis__tick {
+  position: absolute;
+  top: 6px;
+  color: var(--color-text-secondary);
+  font-size: 12px;
+  line-height: 12px;
+  transform: translateX(-50%);
+}

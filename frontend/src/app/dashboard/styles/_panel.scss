@@ -1,0 +1,64 @@
+// Shared look of the panels on Figma screens 2 and 3.
+
+@mixin panel {
+  position: relative;
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-panel-lg);
+  background: var(--color-surface-soft);
+}
+
+// Heading row: title, optional muted period and a right-aligned link.
+@mixin heading {
+  display: flex;
+  align-items: baseline;
+  white-space: nowrap;
+}
+
+@mixin title {
+  margin: 0;
+  color: var(--color-text-primary);
+  font-size: 17px;
+  font-weight: 500;
+  line-height: 16px;
+}
+
+@mixin period {
+  margin-left: 4px;
+  color: var(--color-text-secondary);
+  font-size: 13px;
+  font-weight: 400;
+}
+
+@mixin link {
+  margin-left: auto;
+  color: var(--color-link);
+  font-size: 14px;
+  text-decoration: none;
+
+  &:focus-visible {
+    outline: 2px solid var(--color-link);
+    outline-offset: 2px;
+  }
+}
+
+// Bordered card inside a panel; clickable cards are links.
+@mixin card {
+  display: block;
+  border: 1px solid var(--color-border-light);
+  border-radius: 6px;
+  background: var(--color-surface);
+  color: inherit;
+  text-decoration: none;
+
+  &:focus-visible {
+    outline: 2px solid var(--color-link);
+    outline-offset: 2px;
+  }
+}
+
+// Small screens: panels grow with their content instead of keeping the frame height.
+@mixin small-screen {
+  @media (max-width: 720px) {
+    @content;
+  }
+}

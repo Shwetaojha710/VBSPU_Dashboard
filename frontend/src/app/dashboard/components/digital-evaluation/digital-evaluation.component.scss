@@ -1,0 +1,66 @@
+:host {
+  display: block;
+  min-width: 0;
+}
+
+.panel {
+  height: 219px;
+  padding: 14px 14px 0;
+  border: 1px solid var(--color-border-panel);
+  border-radius: var(--radius-panel);
+  background: var(--color-surface);
+}
+
+.panel__title {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 500;
+  line-height: 17px;
+  white-space: nowrap;
+}
+
+.metrics {
+  display: grid;
+  grid-template-columns: 185fr 184fr 183fr;
+  grid-template-rows: 77px 78px;
+  margin-top: 17px;
+}
+
+.metric {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 10px;
+  text-align: center;
+  white-space: nowrap;
+
+  &:nth-child(3n + 2),
+  &:nth-child(3n + 3) {
+    border-left: 1px solid var(--color-border-soft);
+  }
+
+  &:nth-child(-n + 3) {
+    border-bottom: 1px solid var(--color-border-soft);
+  }
+}
+
+.metric__value {
+  color: var(--color-text-metric);
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 18px;
+}
+
+.metric__label {
+  margin-top: 6px;
+  color: var(--color-text-secondary);
+  font-size: 12.5px;
+  line-height: 14px;
+}
+
+.metric__percent {
+  margin-top: 7px;
+  color: var(--color-teal);
+  font-size: 14px;
+  line-height: 14px;
+}

@@ -1,0 +1,63 @@
+<header class="header">
+  <a class="brand" routerLink="/" aria-label="VBSPU Dashboard – Overview">
+    <img class="brand__logo" [src]="university().logo" alt="VBSPU emblem" width="60" height="60" />
+    <span class="brand__divider" aria-hidden="true"></span>
+    <div class="brand__text">
+      <span class="brand__name">{{ university().shortName }}</span>
+      <span class="brand__subtitle">{{ university().subtitle }}</span>
+    </div>
+  </a>
+
+  <div class="topbar">
+    <a class="datetime" routerLink="/" fragment="screen-3" aria-label="Upcoming events and calendar">
+      <span class="datetime__date">{{ data().date }}</span>
+      <span class="datetime__time">{{ data().time }}</span>
+    </a>
+
+    <form class="search" role="search" (submit)="search($event, query.value)">
+      <button class="search__icon" type="submit" aria-label="Search">
+        <app-icon name="search" [size]="20" [strokeWidth]="2" />
+      </button>
+      <input #query class="search__input" type="search" name="q" [placeholder]="data().searchPlaceholder" [attr.aria-label]="data().searchPlaceholder" />
+    </form>
+
+    <div class="actions">
+      @for (action of data().actions; track action.label) {
+        <a
+          class="action"
+          [routerLink]="'/' + action.path"
+          routerLinkActive="action--active"
+          [attr.aria-label]="action.label + ' (' + action.count + ')'"
+          [title]="action.label"
+        >
+          <app-icon [name]="action.icon" [size]="24" [strokeWidth]="1.6" />
+          <span class="action__badge">{{ action.count }}</span>
+        </a>
+      }
+    </div>
+
+    <div class="user-menu">
+      <button
+        class="user"
+        type="button"
+        aria-haspopup="menu"
+        [attr.aria-expanded]="menuOpen()"
+        (click)="toggleMenu()"
+      >
+        <img class="user__avatar" [src]="data().user.avatar" alt="" width="38" height="38" />
+        <span class="user__name">{{ data().user.name }}</span>
+        <app-icon class="user__chevron" [class.user__chevron--open]="menuOpen()" name="chevron-down" [size]="16" [strokeWidth]="2" />
+      </button>
+
+      @if (menuOpen()) {
+        <ul class="user-menu__list" role="menu">
+          @for (item of data().user.menu; track item.path) {
+            <li role="none">
+              <a class="user-menu__item" role="menuitem" [routerLink]="'/' + item.path" (click)="closeMenu()">{{ item.label }}</a>
+            </li>
+          }
+        </ul>
+      }
+    </div>
+  </div>
+</header>

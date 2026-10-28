@@ -1,0 +1,1007 @@
+{
+  "university": {
+    "shortName": "VBSPU",
+    "subtitle": "DASHBOARD",
+    "logo": "assets/images/vbspu-logo.png"
+  },
+  "header": {
+    "date": "Mon, 26 May 2025",
+    "time": "11:42 AM",
+    "searchPlaceholder": "Search students, colleges, files, reports...",
+    "actions": [
+      {
+        "label": "Notifications",
+        "path": "notifications",
+        "icon": "bell",
+        "count": 2
+      },
+      {
+        "label": "Reports",
+        "path": "reports",
+        "icon": "clipboard-list",
+        "count": 7
+      },
+      {
+        "label": "Approvals",
+        "path": "approvals",
+        "icon": "circle-check",
+        "count": 3
+      }
+    ],
+    "user": {
+      "name": "VC Office",
+      "avatar": "assets/images/vc-avatar.png",
+      "menu": [
+        {
+          "label": "My Profile",
+          "path": "profile"
+        },
+        {
+          "label": "Settings",
+          "path": "settings"
+        }
+      ]
+    }
+  },
+  "navigation": [
+    {
+      "label": "Overview",
+      "path": "",
+      "icon": "home"
+    },
+    {
+      "label": "University Governance",
+      "path": "university-governance",
+      "icon": "blocks"
+    },
+    {
+      "label": "Student & Academic",
+      "path": "student-academic",
+      "icon": "graduation-cap",
+      "hasChildren": true
+    },
+    {
+      "label": "Exams & Certification",
+      "path": "exams-certification",
+      "icon": "box",
+      "hasChildren": true
+    },
+    {
+      "label": "AI Teaching & Faculty",
+      "path": "ai-teaching-faculty",
+      "icon": "brain",
+      "hasChildren": true
+    },
+    {
+      "label": "Affiliation & Colleges",
+      "path": "affiliation-colleges",
+      "icon": "landmark",
+      "hasChildren": true
+    },
+    {
+      "label": "Research & Quality",
+      "path": "research-quality",
+      "icon": "network",
+      "hasChildren": true
+    },
+    {
+      "label": "Finance / HR / Campus",
+      "path": "finance-hr-campus",
+      "icon": "briefcase",
+      "hasChildren": true
+    },
+    {
+      "label": "Communication & Engagement",
+      "path": "communication-engagement",
+      "icon": "messages"
+    },
+    {
+      "label": "Grievances",
+      "path": "grievances",
+      "icon": "message-circle"
+    },
+    {
+      "label": "e-Office",
+      "path": "e-office",
+      "icon": "briefcase"
+    },
+    {
+      "label": "RTI",
+      "path": "rti",
+      "icon": "map-pin"
+    },
+    {
+      "label": "Samerth (HEC)",
+      "path": "samerth-hec",
+      "icon": "id-badge"
+    },
+    {
+      "label": "DigiLocker / NAD",
+      "path": "digilocker-nad",
+      "icon": "briefcase"
+    },
+    {
+      "label": "Scholarships",
+      "path": "scholarships",
+      "icon": "layers"
+    },
+    {
+      "label": "E-Content",
+      "path": "e-content",
+      "icon": "layers"
+    },
+    {
+      "label": "IQAC / NAAC / NIRF / AISHE",
+      "path": "iqac-naac-nirf-aishe",
+      "icon": "clipboard-check",
+      "dense": true
+    },
+    {
+      "label": "Settings",
+      "path": "settings",
+      "icon": "settings"
+    }
+  ],
+  "stats": [
+    {
+      "title": "Total Students",
+      "link": "student-academic",
+      "value": "3,00,476",
+      "icon": "student",
+      "trend": {
+        "direction": "up",
+        "value": "6.3%"
+      },
+      "caption": "vs last year",
+      "captionMarker": true
+    },
+    {
+      "title": "Affiliated Colleges",
+      "link": "affiliation-colleges",
+      "value": "589",
+      "icon": "landmark",
+      "trend": {
+        "direction": "up",
+        "value": "2"
+      },
+      "caption": "this year"
+    },
+    {
+      "title": "Faculty & Staff",
+      "link": "ai-teaching-faculty",
+      "value": "1,892",
+      "icon": "faculty",
+      "trend": {
+        "direction": "up",
+        "value": "4.1%"
+      },
+      "caption": "vs last year",
+      "captionMarker": true
+    },
+    {
+      "title": "Pending Approvals",
+      "link": "e-office",
+      "value": "47",
+      "icon": "approval",
+      "trend": {
+        "direction": "down",
+        "value": "12%"
+      },
+      "caption": "vs last week",
+      "captionMarker": true
+    },
+    {
+      "title": "Active Grievances",
+      "link": "grievances",
+      "value": "263",
+      "icon": "message-question",
+      "trend": {
+        "direction": "down",
+        "value": "18%"
+      },
+      "caption": "vs last month",
+      "captionMarker": true
+    },
+    {
+      "title": "Exams in Progress",
+      "link": "exams-certification",
+      "value": "12",
+      "icon": "exam-sheet",
+      "highlight": "S.4 Lakh",
+      "caption": "Answer Scripts"
+    },
+    {
+      "title": "Scholarship Applications",
+      "link": "scholarships",
+      "value": "18,762",
+      "icon": "scholar",
+      "trend": {
+        "direction": "up",
+        "value": "22%"
+      },
+      "caption": "vs last year",
+      "captionMarker": true
+    },
+    {
+      "title": "Fee Collection",
+      "link": "finance-hr-campus",
+      "value": "₹ 152.8 Cr",
+      "icon": "rupee",
+      "progress": {
+        "percent": 78,
+        "lines": [
+          "of ₹ 195 Cr",
+          "target"
+        ]
+      }
+    }
+  ],
+  "digitalEvaluation": {
+    "title": "Digital Evaluation Status",
+    "metrics": [
+      {
+        "value": "5,42,211",
+        "label": "Answer Scripts"
+      },
+      {
+        "value": "5,32,006",
+        "label": "Scanned",
+        "percent": "(98%)"
+      },
+      {
+        "value": "4,87,220",
+        "label": "Allocated",
+        "percent": "(96%)"
+      },
+      {
+        "value": "3,96,214",
+        "label": "Evaluated",
+        "percent": "(73%)"
+      },
+      {
+        "value": "32,106",
+        "label": "Moderated",
+        "percent": "(6%)"
+      },
+      {
+        "value": "58,686",
+        "label": "Pending",
+        "percent": "(11%)"
+      }
+    ]
+  },
+  "feeCollection": {
+    "title": "Fee Collection vs Target (AY 2024-25)",
+    "collected": {
+      "label": "Fee Collection",
+      "display": "152.8 Cr",
+      "percent": 78
+    },
+    "target": {
+      "label": "Target",
+      "value": 155,
+      "display": "155 Cr"
+    },
+    "axis": {
+      "label": "in 5 Crores",
+      "max": 200,
+      "ticks": [
+        0,
+        50,
+        100,
+        150,
+        200
+      ]
+    }
+  },
+  "affiliatedColleges": {
+    "title": "Affiliated Colleges – District Wise",
+    "linkLabel": "View Details →",
+    "totalLabel": "Toral Affiliated Colleges",
+    "total": 589,
+    "districts": [
+      {
+        "name": "Jaunpur",
+        "count": 302
+      },
+      {
+        "name": "Gazipur",
+        "count": 287
+      }
+    ]
+  },
+  "sparkline": [
+    4,
+    11,
+    16,
+    18,
+    15,
+    10,
+    8,
+    11,
+    16,
+    18,
+    17,
+    15,
+    15,
+    18,
+    24,
+    31,
+    37,
+    35,
+    30,
+    25
+  ],
+  "charts": {
+    "enrollment": {
+      "title": "Student Enrollment Trend (Last 5 Years)",
+      "legend": [
+        {
+          "name": "UG",
+          "color": "#3098c7"
+        },
+        {
+          "name": "PG",
+          "color": "#158ad1"
+        },
+        {
+          "name": "Total",
+          "color": "#55cbb7"
+        }
+      ],
+      "series": [
+        {
+          "name": "Total",
+          "color": "#3098c7",
+          "gradient": [
+            "#26a4e2",
+            "#73d2de"
+          ]
+        }
+      ],
+      "yMax": 150,
+      "yTicks": [
+        {
+          "value": 0,
+          "label": "0K"
+        },
+        {
+          "value": 30,
+          "label": "30K"
+        },
+        {
+          "value": 60,
+          "label": "60K"
+        },
+        {
+          "value": 90,
+          "label": "90K"
+        },
+        {
+          "value": 120,
+          "label": "120K"
+        },
+        {
+          "value": 150,
+          "label": "150K"
+        }
+      ],
+      "trendLine": true,
+      "groups": [
+        {
+          "label": "2020-21",
+          "values": [
+            82
+          ],
+          "labels": [
+            "96K"
+          ]
+        },
+        {
+          "label": "2022-22",
+          "values": [
+            95
+          ],
+          "labels": [
+            "1.5L"
+          ]
+        },
+        {
+          "label": "2022-23",
+          "values": [
+            106
+          ],
+          "labels": [
+            "2.76L"
+          ]
+        },
+        {
+          "label": "2022-25",
+          "values": [
+            120
+          ],
+          "labels": [
+            "2.86L"
+          ]
+        },
+        {
+          "label": "2024-25",
+          "values": [
+            135
+          ],
+          "labels": [
+            "3.00L"
+          ]
+        }
+      ]
+    },
+    "examResults": {
+      "title": "Exam Result Performance",
+      "legend": [
+        {
+          "name": "Gross Pass Percentage",
+          "color": "#3196c5"
+        }
+      ],
+      "series": [
+        {
+          "name": "Gross Pass Percentage",
+          "color": "#3196c5",
+          "gradient": [
+            "#26a4e2",
+            "#73d2de"
+          ]
+        }
+      ],
+      "yMax": 100,
+      "yTicks": [
+        {
+          "value": 0,
+          "label": "0%"
+        },
+        {
+          "value": 20,
+          "label": "20%"
+        },
+        {
+          "value": 40,
+          "label": "40%"
+        },
+        {
+          "value": 60,
+          "label": "60%"
+        },
+        {
+          "value": 80,
+          "label": "80%"
+        },
+        {
+          "value": 100,
+          "label": "100%"
+        }
+      ],
+      "groups": [
+        {
+          "label": "2020-21",
+          "values": [
+            78.4
+          ],
+          "labels": [
+            "78.4%"
+          ]
+        },
+        {
+          "label": "2021-22",
+          "values": [
+            81.2
+          ],
+          "labels": [
+            "81.2%"
+          ]
+        },
+        {
+          "label": "2023-23",
+          "values": [
+            83.6
+          ],
+          "labels": [
+            "83.6%"
+          ]
+        },
+        {
+          "label": "2023-24",
+          "values": [
+            85.1
+          ],
+          "labels": [
+            "85.1%"
+          ]
+        },
+        {
+          "label": "2024-25",
+          "values": [
+            86.3
+          ],
+          "labels": [
+            "86.3%"
+          ]
+        }
+      ]
+    },
+    "grievances": {
+      "title": "Grievance Resolution Trend (2025)",
+      "legend": [
+        {
+          "name": "Received",
+          "color": "#268bd1"
+        },
+        {
+          "name": "Resolved",
+          "color": "#17ae9b"
+        }
+      ],
+      "series": [
+        {
+          "name": "Received",
+          "color": "#268bd1",
+          "gradient": [
+            "#1a8de9",
+            "#4baaf2"
+          ]
+        },
+        {
+          "name": "Resolved",
+          "color": "#17ae9b",
+          "gradient": [
+            "#3bc8b2",
+            "#6bd6ba"
+          ]
+        }
+      ],
+      "yMax": 500,
+      "yTicks": [
+        {
+          "value": 0,
+          "label": "0"
+        },
+        {
+          "value": 100,
+          "label": "100"
+        },
+        {
+          "value": 200,
+          "label": "200"
+        },
+        {
+          "value": 300,
+          "label": "300"
+        },
+        {
+          "value": 400,
+          "label": "400"
+        },
+        {
+          "value": 500,
+          "label": "500"
+        }
+      ],
+      "groups": [
+        {
+          "label": "Jan",
+          "values": [
+            342,
+            290
+          ],
+          "labels": [
+            "342",
+            "290"
+          ]
+        },
+        {
+          "label": "Feb",
+          "values": [
+            298,
+            246
+          ],
+          "labels": [
+            "298",
+            "246"
+          ]
+        },
+        {
+          "label": "Mar",
+          "values": [
+            301,
+            261
+          ],
+          "labels": [
+            "301",
+            "261"
+          ]
+        },
+        {
+          "label": "Apr",
+          "values": [
+            276,
+            240
+          ],
+          "labels": [
+            "276",
+            "240"
+          ]
+        },
+        {
+          "label": "May",
+          "values": [
+            263,
+            225
+          ],
+          "labels": [
+            "263",
+            "225"
+          ]
+        }
+      ]
+    }
+  },
+  "screen2": {
+    "researchQuality": {
+      "title": "Research & Quality",
+      "period": "(Last 3 Years)",
+      "linkLabel": "View Details",
+      "link": "research-quality",
+      "publications": {
+        "value": "1,286",
+        "label": "Research Publications (Last 3 Years)",
+        "trend": "72%",
+        "note": "vs previous period"
+      },
+      "scholars": {
+        "value": "412",
+        "label": "Ph.D. Scholars",
+        "progress": "68%",
+        "progressLabel": "Data Progress"
+      },
+      "seedProjects": {
+        "value": "27",
+        "label": "Seed Projects",
+        "aishe": "AISHE (2024-23)",
+        "status": "Submitted"
+      },
+      "target": {
+        "percent": 68,
+        "label": "Target: 1,350"
+      }
+    },
+    "facultyDevelopment": {
+      "title": "Faculty Development",
+      "period": "(This Year)",
+      "linkLabel": "View Details",
+      "link": "ai-teaching-faculty",
+      "items": [
+        {
+          "icon": "presentation",
+          "value": "842",
+          "label": "Faculty Trained"
+        },
+        {
+          "icon": "code-window",
+          "value": "78",
+          "label": "Programmes"
+        },
+        {
+          "icon": "pulse",
+          "value": "12",
+          "label": "Ongoing"
+        }
+      ],
+      "target": {
+        "percent": 68,
+        "label": "Target: 1,350"
+      }
+    },
+    "integrations": {
+      "title": "Samarth & External Integrations",
+      "status": "All Systems Operational",
+      "link": "samarth-hec",
+      "items": [
+        {
+          "name": "Samarth (HEC)",
+          "status": "Connected",
+          "logo": "samarth"
+        },
+        {
+          "name": "Scholarship (UP Govt.)",
+          "status": "Connected",
+          "logo": "assets/images/up-emblem.png"
+        },
+        {
+          "name": "DigiLocker / NAD",
+          "status": "Connected",
+          "logo": "assets/images/digilocker-icon.png"
+        },
+        {
+          "name": "TEQIP",
+          "status": "Connected",
+          "logo": "teqip"
+        }
+      ]
+    },
+    "communication": {
+      "title": "Communication & Engagement",
+      "period": "((This Month)",
+      "linkLabel": "View Details",
+      "link": "communication-engagement",
+      "items": [
+        {
+          "value": "12,540",
+          "label": "Webmail Users",
+          "trend": "8%"
+        },
+        {
+          "value": "492",
+          "label": "Feedback Responses",
+          "trend": "12%"
+        },
+        {
+          "value": "248",
+          "label": "NSS Units",
+          "trend": "5%"
+        },
+        {
+          "value": "12,500",
+          "label": "Alumni Members",
+          "trend": "18%"
+        }
+      ]
+    },
+    "rti": {
+      "title": "RTI",
+      "period": "((This Year)",
+      "linkLabel": "View Details",
+      "link": "rti",
+      "items": [
+        {
+          "icon": "file-text",
+          "value": "96",
+          "label": "Applications",
+          "trend": "10%"
+        },
+        {
+          "icon": "square-check",
+          "value": "82",
+          "label": "Disposed",
+          "note": "(85%)"
+        },
+        {
+          "icon": "clock",
+          "value": "14",
+          "label": "Pending",
+          "note": "(15%)"
+        }
+      ]
+    },
+    "aiInsights": {
+      "title": "AI Insights & Recommendations",
+      "badge": "AI-enabled",
+      "items": [
+        {
+          "title": "Affiliation Renewals Delayed",
+          "text": "12 colleges have pending affiliation renewal beyond due date. Recommend immediate review.",
+          "link": "affiliation-colleges"
+        },
+        {
+          "title": "Rise in Examination Related Grievances",
+          "text": "Exam related grievances increased by 28%. Consider additional helpdesk support.",
+          "highlight": true,
+          "link": "grievances"
+        },
+        {
+          "title": "Scholarship Document Verification Bottleneck",
+          "text": "18% applications pending document verification. Consider additional verification resources.",
+          "link": "scholarships"
+        },
+        {
+          "title": "Opportunity to Increase Research Output",
+          "text": "Increase in PhD registrations (↑ 15%) but publications need improvement. Recommend research mentoring.",
+          "link": "research-quality"
+        }
+      ]
+    },
+    "funnel": {
+      "title": "Scholarship Processing Funnel (AY 2024-25)",
+      "link": "scholarships",
+      "stages": [
+        {
+          "label": "Applied",
+          "value": "18,705",
+          "percent": "100%",
+          "color": "#84cce9"
+        },
+        {
+          "label": "Verified",
+          "value": "13,420",
+          "percent": "82%",
+          "color": "#69cede"
+        },
+        {
+          "label": "Approved",
+          "value": "12,080",
+          "percent": "75%",
+          "color": "#49c8c5"
+        },
+        {
+          "label": "Informed",
+          "value": "12,043",
+          "percent": "68%",
+          "color": "#53cbb7"
+        }
+      ]
+    },
+    "quickAccess": {
+      "title": "Quick Access",
+      "items": [
+        {
+          "label": "Approve Files (e-Office)",
+          "icon": "folder",
+          "link": "e-office"
+        },
+        {
+          "label": "Grievance Review",
+          "icon": "file-text",
+          "link": "grievances"
+        },
+        {
+          "label": "Affiliation Proposals",
+          "icon": "users",
+          "link": "affiliation-colleges"
+        },
+        {
+          "label": "Examination Reports",
+          "icon": "file-text",
+          "link": "exams-certification"
+        },
+        {
+          "label": "View University Reports",
+          "icon": "bar-chart",
+          "link": "university-governance"
+        },
+        {
+          "label": "Scholarship Dashboard",
+          "icon": "graduation-cap",
+          "link": "scholarships"
+        },
+        {
+          "label": "Meeting Schedule",
+          "icon": "calendar",
+          "link": "university-governance"
+        },
+        {
+          "label": "NAAC / NIRF Progress",
+          "icon": "book-open",
+          "link": "iqac-naac-nirf-aishe"
+        }
+      ]
+    }
+  },
+  "screen3": {
+    "activity": {
+      "title": "Recent Activity Feed",
+      "linkLabel": "View All",
+      "link": "university-governance",
+      "items": [
+        {
+          "title": "New affiliation application received",
+          "detail": "Saraswati Mahavidyalaya, Jaunpur",
+          "time": "11:32 AM"
+        },
+        {
+          "title": "Exam result published",
+          "detail": "B.A. Sem VI (2024-25)",
+          "time": "10:45 AM"
+        },
+        {
+          "title": "Grievance resolved",
+          "detail": "#GRV-2025-3342",
+          "time": "09:18 AM"
+        },
+        {
+          "title": "Scholarship disbursed",
+          "detail": "1,248 students | ₹ 2.36 Cr",
+          "time": "Yesterday"
+        },
+        {
+          "title": "RTI response submitted",
+          "detail": "File No. RTI/2025/118",
+          "time": "Yesterday"
+        },
+        {
+          "title": "Research paper published",
+          "detail": "In UGC CARE Journal",
+          "time": "24 May 2025"
+        },
+        {
+          "title": "Research paper published",
+          "detail": "In UGC CARE Journal",
+          "time": "24 May 2025"
+        },
+        {
+          "title": "Research paper published",
+          "detail": "In UGC CARE Journal",
+          "time": "24 May 2025"
+        }
+      ]
+    },
+    "events": {
+      "title": "Upcoming Events & Calendar",
+      "linkLabel": "View All",
+      "link": "university-governance",
+      "items": [
+        {
+          "day": "26",
+          "month": "MAY",
+          "title": "Inspection - Affiliated Colleges (Jaunpur District)",
+          "time": "10:30 AM – 12:30 PM",
+          "location": "VC Office",
+          "tone": "orange"
+        },
+        {
+          "day": "28",
+          "month": "MAY",
+          "title": "Academic Council Meeting",
+          "time": "11:00 AM – 01:00 PM",
+          "location": "Conference Hall",
+          "tone": "blue"
+        },
+        {
+          "day": "02",
+          "month": "JUN",
+          "title": "Start of Even Semester Examinations",
+          "time": "As per schedule",
+          "location": "University Campus",
+          "tone": "orange"
+        },
+        {
+          "day": "05",
+          "month": "JUN",
+          "title": "NAAC Preparation Review",
+          "time": "11:00 AM – 12:30 PM",
+          "location": "VC Office",
+          "tone": "blue"
+        },
+        {
+          "day": "4",
+          "month": "JUN",
+          "title": "Meeting with College Principals (Gazipur District)",
+          "time": "03:00 PM – 05:00 PM",
+          "location": "Virtual (VC Platform)",
+          "tone": "orange"
+        },
+        {
+          "day": "3",
+          "month": "JUN",
+          "title": "Start of Even Semester Examinations",
+          "time": "As per schedule",
+          "location": "University Campus",
+          "tone": "orange"
+        },
+        {
+          "day": "2",
+          "month": "JUN",
+          "title": "NAAC Preparation Review",
+          "time": "11:00 AM – 12:30 PM",
+          "location": "VC Office",
+          "tone": "blue"
+        },
+        {
+          "day": "1",
+          "month": "JUN",
+          "title": "Meeting with College Principals (Gazipur District)",
+          "time": "03:00 PM – 05:00 PM",
+          "location": "Virtual (VC Platform)",
+          "tone": "orange"
+        }
+      ]
+    }
+  }
+}

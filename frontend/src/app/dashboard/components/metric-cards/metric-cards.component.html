@@ -1,0 +1,28 @@
+@let d = data();
+<section class="panel" [style.--panel-height.px]="height()" [style.--card-height.px]="cardHeight()" [style.--columns]="columns()">
+  <header class="heading">
+    <h2 class="heading__title">{{ d.title }}</h2>
+    <span class="heading__period">{{ d.period }}</span>
+    <a class="heading__link" [routerLink]="'/' + d.link">{{ d.linkLabel }}</a>
+  </header>
+
+  <div class="row">
+    @for (item of d.items; track item.label) {
+      <a class="card" [class.card--icon]="item.icon" [routerLink]="'/' + d.link" [attr.aria-label]="item.value + ' ' + item.label">
+        @if (item.icon) {
+          <app-icon class="card__icon" [name]="item.icon" [size]="25" [strokeWidth]="1.7" />
+        }
+        <span class="card__text">
+          <span class="card__value">{{ item.value }}</span>
+          <span class="card__label">{{ item.label }}</span>
+        </span>
+        @if (item.trend) {
+          <span class="card__trend">▲ {{ item.trend }}</span>
+        }
+        @if (item.note) {
+          <span class="card__note">{{ item.note }}</span>
+        }
+      </a>
+    }
+  </div>
+</section>

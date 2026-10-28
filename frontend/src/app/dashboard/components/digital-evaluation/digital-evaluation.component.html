@@ -1,0 +1,14 @@
+<section class="panel">
+  <h2 class="panel__title">{{ title() }}</h2>
+  <div class="metrics">
+    @for (metric of metrics(); track metric.label) {
+      <div class="metric">
+        <span class="metric__value">{{ metric.value }}</span>
+        <span class="metric__label">{{ metric.label }}</span>
+        @if (metric.percent) {
+          <span class="metric__percent">{{ metric.percent }}</span>
+        }
+      </div>
+    }
+  </div>
+</section>

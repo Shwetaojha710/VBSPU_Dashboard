@@ -1,1 +1,101 @@
-/* You can add global styles to this file, and also import other style files */
+/*
+ * Design tokens measured from the Figma frame
+ * "University digital command centre screen 1" (1672 × 941).
+ */
+:root {
+  /* Typography */
+  --font-family-base: 'Roboto Condensed', 'Roboto', Arial, sans-serif;
+  --font-family-brand: 'Roboto', Arial, sans-serif;
+
+  /* Surfaces */
+  --color-page: #f7f7f7;
+  --color-surface: #ffffff;
+  --color-surface-muted: #fafcfe;
+  --color-surface-soft: #fdfdfd;
+  --color-sidebar: #4f2075;
+  --color-sidebar-active: #8151aa;
+
+  /* Lines */
+  --color-border-panel: #c3d6e2;
+  --color-border-light: #dcefff;
+  --color-border-soft: #e2eaf0;
+  --color-border-icon: #d6e2e9;
+  --color-axis: #a8bbc9;
+  --color-axis-light: #bcccd8;
+
+  /* Text */
+  --color-text-primary: #151d58;
+  --color-text-secondary: #627486;
+  --color-text-metric: #174999;
+  --color-text-sidebar: rgba(255, 255, 255, 0.6);
+  --color-text-inverse: #ffffff;
+  --color-icon-header: #3f5474;
+  --color-icon-search: #28465d;
+
+  /* Accents */
+  --color-brand-pink: #ec268f;
+  --color-positive: #34c759;
+  --color-negative: #ff3b30;
+  --color-link: #007aff;
+  --color-link-bright: #0075ff;
+  --color-success: #00bf55;
+  --color-warning: #ff9500;
+  --color-orange: #ff8500;
+  --color-value-deep: #001496;
+  --color-value-blue: #0049c7;
+  --color-muted-blue: #5078b7;
+  --color-timeline: #aeb8c1;
+  --color-dot-orange: #ff8500;
+  --color-dot-blue: #107eff;
+  --color-badge: #da424a;
+  --color-teal: #379f8f;
+  --color-blue: #2685b7;
+  --color-ring-track: #eeeeee;
+  --color-district-1: #9ed5f1;
+  --color-district-2: #b4ead9;
+
+  /* Layout */
+  --sidebar-width: 219px;
+  --header-height: 70px;
+  --content-padding-top: 14px;
+  --content-padding-left: 14px;
+  --content-padding-right: 10px;
+  --gap-stat: 15px;
+  --gap-panel: 10px;
+  --gap-chart: 9px;
+
+  /* Radii */
+  --radius-card: 5px;
+  --radius-panel: 6px;
+  --radius-panel-lg: 8px;
+  --radius-pill: 20px;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+}
+
+/* The Figma screens are stacked vertically; hide the scrollbar track so each screen
+   keeps the full 1672px frame width. Wheel, touch and keyboard scrolling still work. */
+html {
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+body {
+  background: var(--color-page);
+  color: var(--color-text-primary);
+  font-family: var(--font-family-base);
+  -webkit-font-smoothing: antialiased;
+}

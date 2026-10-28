@@ -1,0 +1,32 @@
+@let d = data();
+<section class="panel">
+  <h2 class="panel__title">{{ d.title }}</h2>
+
+  <div class="row row--collected">
+    <span class="row__label">{{ d.collected.label }}</span>
+    <div class="row__track">
+      <span class="bar bar--collected" [style.width.%]="collectedWidth()"></span>
+      <span class="row__value row__value--collected" [style.left.%]="collectedWidth()">
+        {{ d.collected.display }}
+        <strong class="row__percent">{{ d.collected.percent }}%</strong>
+      </span>
+    </div>
+  </div>
+
+  <div class="row row--target">
+    <span class="row__label">{{ d.target.label }}</span>
+    <div class="row__track">
+      <span class="bar bar--target" [style.width.%]="targetWidth()"></span>
+      <span class="row__value row__value--target" [style.left.%]="targetWidth()">{{ d.target.display }}</span>
+    </div>
+  </div>
+
+  <div class="axis">
+    <span class="row__label">{{ d.axis.label }}</span>
+    <div class="axis__scale">
+      @for (tick of d.axis.ticks; track tick) {
+        <span class="axis__tick" [style.left.%]="tickPosition(tick)">{{ tick }}</span>
+      }
+    </div>
+  </div>
+</section>

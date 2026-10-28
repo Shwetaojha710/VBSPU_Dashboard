@@ -1,0 +1,26 @@
+<section class="section">
+  @if (path() === 'search') {
+    <h1 class="section__title">Search results</h1>
+    <p class="section__text">
+      @if (results().length) {
+        {{ results().length }} result(s) for “{{ query() }}”
+      } @else {
+        No results for “{{ query() }}”. Try a section name such as “Grievances” or “Scholarships”.
+      }
+    </p>
+    <ul class="results">
+      @for (r of results(); track r.context + r.label) {
+        <li>
+          <a class="results__item" [routerLink]="'/' + r.path">
+            <span class="results__label">{{ r.label }}</span>
+            <span class="results__context">{{ r.context }}</span>
+          </a>
+        </li>
+      }
+    </ul>
+  } @else {
+    <h1 class="section__title">{{ item()?.label ?? 'Section not found' }}</h1>
+    <p class="section__text">This section is not designed yet. Its screens will be added here.</p>
+  }
+  <a class="section__link" routerLink="/">← Back to Overview</a>
+</section>

@@ -1,0 +1,79 @@
+:host {
+  display: block;
+  min-width: 0;
+}
+
+.panel {
+  position: relative;
+  height: 219px;
+  padding: 13px 16px 0 13px;
+  overflow: hidden;
+  border: 1px solid var(--color-border-panel);
+  border-radius: var(--radius-panel);
+  background: var(--color-surface);
+}
+
+.panel__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-right: -3px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--color-border-soft);
+}
+
+.panel__title {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 500;
+  line-height: 17px;
+  white-space: nowrap;
+}
+
+.panel__link {
+  margin-right: 3px;
+  color: var(--color-link);
+  font-size: 14px;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.total {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-top: 6px;
+}
+
+.total__label {
+  color: var(--color-text-secondary);
+  font-size: 16px;
+}
+
+.total__value {
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 26px;
+}
+
+.map {
+  position: absolute;
+  top: -1px;
+  left: -1px;
+  width: calc(100% + 2px);
+  height: calc(100% + 2px);
+}
+
+.map__name {
+  fill: var(--color-text-primary);
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.map__count {
+  fill: var(--color-text-primary);
+  font-size: 24px;
+  font-weight: 700;
+}

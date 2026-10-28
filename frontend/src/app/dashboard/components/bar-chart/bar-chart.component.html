@@ -1,0 +1,52 @@
+@let d = data();
+@let l = layout();
+<section class="chart" [style.height.px]="l.height">
+  <h2 class="chart__title">{{ d.title }}</h2>
+
+  <ul class="chart__legend">
+    @for (item of d.legend; track item.name) {
+      <li class="chart__legend-item">
+        <span class="chart__dot" [style.background]="item.color"></span>{{ item.name }}
+      </li>
+    }
+  </ul>
+
+  <svg class="chart__plot" [attr.viewBox]="'0 0 ' + l.width + ' ' + l.height" aria-hidden="true">
+    <defs>
+      @for (s of d.series; track s.name; let si = $index) {
+        <linearGradient [attr.id]="gradientId(si)" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" [attr.stop-color]="s.gradient[0]" />
+          <stop offset="1" [attr.stop-color]="s.gradient[1]" />
+        </linearGradient>
+      }
+    </defs>
+
+    @for (tick of ticks(); track tick.value) {
+      <text class="chart__tick" [attr.x]="l.axisX - 10" [attr.y]="tick.y + 4" text-anchor="end">{{ tick.label }}</text>
+    }
+
+    <line class="chart__axis" [attr.x1]="l.axisX + 0.5" [attr.x2]="l.axisX + 0.5" [attr.y1]="ticks()[ticks().length - 1].y - 4" [attr.y2]="l.baselineY" />
+    <line class="chart__axis" [attr.x1]="l.axisX" [attr.x2]="l.axisEndX" [attr.y1]="l.baselineY + 0.5" [attr.y2]="l.baselineY + 0.5" />
+
+    @for (group of groups(); track group.label) {
+      @for (bar of group.bars; track bar.series) {
+        <path [attr.d]="barPath(bar)" [attr.fill]="'url(#' + gradientId(bar.series) + ')'" />
+        <text class="chart__value" [attr.x]="bar.x + l.barWidth / 2" [attr.y]="bar.y - l.valueLabelOffset" text-anchor="middle">{{ bar.label }}</text>
+      }
+      <text
+        class="chart__category"
+        [class.chart__category--strong]="l.strongXLabels"
+        [attr.x]="group.center"
+        [attr.y]="l.xLabelY"
+        text-anchor="middle"
+      >{{ group.label }}</text>
+    }
+
+    @if (d.trendLine) {
+      <polyline class="chart__trend" [attr.points]="trendPath()" />
+      @for (p of trendPoints(); track $index) {
+        <circle class="chart__trend-dot" [attr.cx]="p.x" [attr.cy]="p.y" r="2.5" />
+      }
+    }
+  </svg>
+</section>

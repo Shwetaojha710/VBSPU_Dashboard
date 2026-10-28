@@ -1,0 +1,60 @@
+@let c = card();
+<article class="stat">
+  <div class="stat__icon">
+    <app-icon [name]="c.icon" [size]="36" [strokeWidth]="1.5" />
+  </div>
+
+  <h3 class="stat__title">{{ c.title }}</h3>
+  <p class="stat__value">{{ c.value }}</p>
+
+  @if (c.trend; as trend) {
+    <p class="stat__trend" [class.stat__trend--down]="trend.direction === 'down'">
+      <span class="stat__arrow" aria-hidden="true">{{ trend.direction === 'up' ? '▲' : '▼' }}</span>
+      {{ trend.value }}
+    </p>
+  }
+  @if (c.highlight) {
+    <p class="stat__highlight">{{ c.highlight }}</p>
+  }
+  @if (c.caption) {
+    <p class="stat__caption">
+      @if (c.captionMarker) {
+        <span class="stat__marker" aria-hidden="true">v</span>
+      }
+      {{ c.caption }}
+    </p>
+  }
+
+  @if (c.progress; as progress) {
+    <div class="stat__progress">
+      <svg class="stat__ring" viewBox="0 0 46 46" width="46" height="46" aria-hidden="true">
+        <circle cx="23" cy="23" [attr.r]="ringRadius" class="stat__ring-track" />
+        <circle
+          cx="23"
+          cy="23"
+          [attr.r]="ringRadius"
+          class="stat__ring-value"
+          [attr.stroke-dasharray]="ringCircumference"
+          [attr.stroke-dashoffset]="ringOffset()"
+        />
+        <text x="23" y="27.5" text-anchor="middle" class="stat__ring-label">{{ progress.percent }}%</text>
+      </svg>
+      <p class="stat__progress-text">
+        @for (line of progress.lines; track $index) {
+          <span>{{ line }}</span>
+        }
+      </p>
+    </div>
+  }
+
+  <svg class="stat__spark" viewBox="0 0 84 50" width="84" height="50" aria-hidden="true">
+    <defs>
+      <linearGradient [attr.id]="'spark-fill-' + index()" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#ec268f" stop-opacity="0.32" />
+        <stop offset="1" stop-color="#ec268f" stop-opacity="0" />
+      </linearGradient>
+    </defs>
+    <path [attr.d]="sparkArea()" [attr.fill]="'url(#spark-fill-' + index() + ')'" />
+    <polyline [attr.points]="sparkLine()" class="stat__spark-line" />
+  </svg>
+</article>

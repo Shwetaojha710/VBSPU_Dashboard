@@ -1,0 +1,33 @@
+@let d = data();
+<section class="panel">
+  <header class="heading">
+    <h2 class="heading__title">{{ d.title }}</h2>
+    <span class="heading__period">{{ d.period }}</span>
+    <a class="heading__link" [routerLink]="'/' + d.link">{{ d.linkLabel }}</a>
+  </header>
+
+  <a class="box" [routerLink]="'/' + d.link" [attr.aria-label]="d.title">
+    <div class="col">
+      <span class="value value--deep">{{ d.publications.value }}</span>
+      <span class="label label--wrap">{{ d.publications.label }}</span>
+      <span class="trend">▲ {{ d.publications.trend }}</span>
+      <span class="note">{{ d.publications.note }}</span>
+    </div>
+    <div class="col">
+      <span class="value value--orange">{{ d.scholars.value }}</span>
+      <span class="label label--mid">{{ d.scholars.label }}</span>
+      <span class="value value--sub">{{ d.scholars.progress }}</span>
+      <span class="note note--strong">{{ d.scholars.progressLabel }}</span>
+    </div>
+    <div class="col">
+      <span class="value value--blue">{{ d.seedProjects.value }}</span>
+      <span class="label label--seed">{{ d.seedProjects.label }}</span>
+      <span class="aishe">{{ d.seedProjects.aishe }}</span>
+      <span class="status"><i class="status__dot"></i>{{ d.seedProjects.status }}</span>
+    </div>
+    <div class="col col--ring">
+      <app-progress-ring [percent]="d.target.percent" [size]="93" [stroke]="13" [labelSize]="22" />
+      <span class="target">{{ d.target.label }}</span>
+    </div>
+  </a>
+</section>

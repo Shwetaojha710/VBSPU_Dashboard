@@ -1,0 +1,21 @@
+@let d = data();
+<section class="panel">
+  <header class="heading">
+    <h2 class="heading__title">{{ d.title }}</h2>
+    <span class="badge"><app-icon name="brain" [size]="13" [strokeWidth]="1.8" />{{ d.badge }}</span>
+  </header>
+
+  <ul class="list">
+    @for (item of d.items; track item.title) {
+      <li>
+        <a class="item" [class.item--highlight]="item.highlight" [routerLink]="'/' + (item.link ?? '')">
+          <span class="item__text">
+            <span class="item__title">{{ item.title }}</span>
+            <span class="item__body">{{ item.text }}</span>
+          </span>
+          <app-icon class="item__chevron" name="chevron-right" [size]="14" [strokeWidth]="2.5" />
+        </a>
+      </li>
+    }
+  </ul>
+</section>

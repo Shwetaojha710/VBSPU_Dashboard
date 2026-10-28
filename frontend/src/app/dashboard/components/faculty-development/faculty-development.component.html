@@ -1,0 +1,24 @@
+@let d = data();
+<section class="panel">
+  <header class="heading">
+    <h2 class="heading__title">{{ d.title }}</h2>
+    <span class="heading__period">{{ d.period }}</span>
+    <a class="heading__link" [routerLink]="'/' + d.link">{{ d.linkLabel }}</a>
+  </header>
+
+  <div class="row">
+    @for (item of d.items; track item.label) {
+      <a class="card" [routerLink]="'/' + d.link" [attr.aria-label]="item.value + ' ' + item.label">
+        <span class="card__icon"><app-icon [name]="item.icon" [size]="21" [strokeWidth]="1.6" /></span>
+        <span class="card__text">
+          <span class="card__value">{{ item.value }}</span>
+          <span class="card__label">{{ item.label }}</span>
+        </span>
+      </a>
+    }
+    <div class="target">
+      <app-progress-ring [percent]="d.target.percent" [size]="39" [stroke]="4" [labelSize]="7" labelColor="#2032a3" />
+      <span class="target__label">{{ d.target.label }}</span>
+    </div>
+  </div>
+</section>

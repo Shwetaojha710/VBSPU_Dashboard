@@ -1,0 +1,45 @@
+:host {
+  display: block;
+}
+
+.shell {
+  display: grid;
+  grid-template-columns: calc(var(--sidebar-width) + 1px) minmax(0, 1fr);
+  grid-template-rows: var(--header-height) 1fr;
+  min-height: 100vh;
+}
+
+.shell__header {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  grid-column: 1 / -1;
+}
+
+/* Header and sidebar appear on every Figma screen, so they stay pinned while the screens scroll. */
+.shell__sidebar {
+  position: sticky;
+  top: var(--header-height);
+  align-self: start;
+  height: calc(100vh - var(--header-height));
+  overflow-y: auto;
+}
+
+.content {
+  min-width: 0;
+  padding: var(--content-padding-top) var(--content-padding-right) 0 var(--content-padding-left);
+}
+
+@media (max-width: 1024px) {
+  .shell {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .shell__sidebar {
+    display: none;
+  }
+
+  .content {
+    padding: var(--content-padding-top) var(--content-padding-left) 24px;
+  }
+}

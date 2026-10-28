@@ -1,0 +1,89 @@
+:host {
+  display: block;
+  min-width: 0;
+}
+
+.chart {
+  position: relative;
+  padding: 8px 15px 0;
+  border: 1px solid var(--color-border-panel);
+  border-radius: var(--radius-panel);
+  background: var(--color-surface-muted);
+}
+
+.chart__title {
+  position: relative;
+  z-index: 1;
+  margin: 0;
+  font-size: 17px;
+  font-weight: 500;
+  line-height: 17px;
+  white-space: nowrap;
+}
+
+.chart__legend {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  justify-content: center;
+  gap: 24px;
+  margin: 17px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.chart__legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--color-text-secondary);
+  font-size: 14px;
+  line-height: 14px;
+}
+
+.chart__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.chart__plot {
+  position: absolute;
+  top: -1px;
+  left: -1px;
+  width: calc(100% + 2px);
+  height: calc(100% + 2px);
+  overflow: visible;
+}
+
+.chart__axis {
+  stroke: var(--color-axis);
+  stroke-width: 1;
+}
+
+.chart__tick,
+.chart__category {
+  fill: var(--color-text-secondary);
+  font-size: 12.5px;
+}
+
+.chart__category--strong {
+  fill: var(--color-text-primary);
+  font-size: 14px;
+}
+
+.chart__value {
+  fill: var(--color-text-primary);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.chart__trend {
+  fill: none;
+  stroke: #3a8fc0;
+  stroke-width: 1.5;
+}
+
+.chart__trend-dot {
+  fill: #2f7fb4;
+}

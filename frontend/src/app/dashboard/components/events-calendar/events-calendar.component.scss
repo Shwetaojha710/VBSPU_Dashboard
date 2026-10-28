@@ -1,0 +1,152 @@
+@use '../../styles/panel';
+
+:host {
+  display: block;
+  min-width: 0;
+}
+
+.panel {
+  @include panel.panel;
+  height: 523px;
+  padding: 14px 21px 0 16px;
+}
+
+.heading {
+  @include panel.heading;
+}
+
+.heading__title {
+  @include panel.title;
+}
+
+.heading__link {
+  @include panel.link;
+}
+
+.timeline {
+  position: relative;
+  margin: 13px -10px 0 -7px;
+  padding: 0 0 13px;
+  border: 1px solid var(--color-border-light);
+  border-radius: 8px;
+  list-style: none;
+
+  // Vertical line behind the dots.
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 13px;
+    left: 82px;
+    width: 2px;
+    background: var(--color-timeline);
+  }
+}
+
+.event {
+  position: relative;
+  display: flex;
+  height: 56px;
+  color: inherit;
+  text-decoration: none;
+
+  &:focus-visible {
+    outline: 2px solid var(--color-link);
+    outline-offset: -2px;
+  }
+}
+
+li:first-child .event {
+  height: 58px;
+}
+
+.date {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  align-items: center;
+  width: 47px;
+  height: 48px;
+  margin: 7px 0 0 9px;
+  padding-top: 6px;
+  border: 1px solid #eaf7ff;
+  border-radius: 4px;
+  background: #fcfcfd;
+}
+
+li:not(:first-child) .date {
+  margin-top: 5px;
+}
+
+.date__day {
+  color: var(--color-text-metric);
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 20px;
+}
+
+.date__month {
+  margin-top: 3px;
+  color: var(--color-link-bright);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 13px;
+}
+
+.dot {
+  position: absolute;
+  top: 16px;
+  left: 79px;
+  width: 9px;
+  height: 9px;
+  border: 1px solid #fff;
+  border-radius: 50%;
+  background: var(--color-dot-orange);
+}
+
+.dot--blue {
+  background: var(--color-dot-blue);
+}
+
+.event__body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  margin: 0 10px 0 55px;
+  padding-top: 10px;
+  border-bottom: 1px solid var(--color-border-light);
+}
+
+.event__title {
+  font-size: 16px;
+  line-height: 19px;
+  white-space: nowrap;
+}
+
+.event__meta {
+  display: flex;
+  align-items: center;
+  margin-top: 6px;
+  color: var(--color-text-secondary);
+  font-size: 14px;
+  line-height: 15px;
+  white-space: nowrap;
+}
+
+.event__pin {
+  margin: 0 8px 0 12px;
+}
+
+@include panel.small-screen {
+  .panel {
+    height: auto;
+    padding-bottom: 14px;
+  }
+
+  .event__title,
+  .event__meta {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}

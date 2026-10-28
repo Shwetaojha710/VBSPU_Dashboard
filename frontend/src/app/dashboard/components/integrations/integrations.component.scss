@@ -1,0 +1,137 @@
+@use '../../styles/panel';
+
+:host {
+  display: block;
+  min-width: 0;
+}
+
+.panel {
+  @include panel.panel;
+  height: 120px;
+  padding: 11px 10px 0 11px;
+}
+
+.heading {
+  @include panel.heading;
+  align-items: center;
+}
+
+.heading__title {
+  @include panel.title;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 23px;
+  margin-left: auto;
+  padding: 0 8px;
+  border-radius: 12px;
+  background: #dcf9ee;
+  color: #00b754;
+  font-size: 12.5px;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: minmax(0, 175fr) minmax(0, 176fr) minmax(0, 176fr) minmax(0, 116fr);
+  gap: 12.5px;
+  margin: 16px 0 0 2px;
+}
+
+.card {
+  @include panel.card;
+  display: flex;
+  align-items: center;
+  height: 58px;
+  padding-left: 7px;
+  background: var(--color-surface-soft);
+}
+
+.logo {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 35px;
+  height: 35px;
+}
+
+.logo--tile {
+  border-radius: 4px;
+  background: #d7e9fd;
+
+  img {
+    width: 30px;
+    height: 30px;
+    object-fit: contain;
+  }
+}
+
+.logo--samarth {
+  color: #007aff;
+  font-family: var(--font-family-brand);
+  font-size: 30px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.logo--teqip {
+  color: #174999;
+}
+
+.card__text {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-left: 10px;
+  white-space: nowrap;
+}
+
+.card__name {
+  color: var(--color-text-metric);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 14px;
+}
+
+.card__status {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--color-success);
+  font-size: 13px;
+  line-height: 14px;
+}
+
+.card__dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--color-success);
+}
+
+@include panel.small-screen {
+  .panel {
+    height: auto;
+    padding-bottom: 11px;
+  }
+
+  .heading {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .badge {
+    margin-left: 0;
+  }
+
+  .row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .card__text {
+    min-width: 0;
+    overflow: hidden;
+  }
+}

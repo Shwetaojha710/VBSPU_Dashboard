@@ -1,0 +1,12 @@
+@let d = data();
+<section class="panel">
+  <h2 class="title">{{ d.title }}</h2>
+  <div class="grid">
+    @for (item of d.items; track item.label) {
+      <a class="tile" [routerLink]="'/' + item.link">
+        <app-icon class="tile__icon" [name]="item.icon" [size]="25" [strokeWidth]="1.3" />
+        <span class="tile__label">{{ item.label }}</span>
+      </a>
+    }
+  </div>
+</section>

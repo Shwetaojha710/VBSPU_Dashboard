@@ -1,0 +1,29 @@
+@let d = data();
+<section class="panel">
+  <header class="heading">
+    <h2 class="heading__title">{{ d.title }}</h2>
+    <span class="badge"><app-icon name="circle-check" [size]="13" [strokeWidth]="2" />{{ d.status }}</span>
+  </header>
+
+  <div class="row">
+    @for (item of d.items; track item.name) {
+      <a class="card" [routerLink]="'/' + d.link" [attr.aria-label]="item.name + ': ' + item.status">
+        @switch (item.logo) {
+          @case ('samarth') {
+            <span class="logo logo--tile logo--samarth" aria-hidden="true">S</span>
+          }
+          @case ('teqip') {
+            <span class="logo logo--teqip" aria-hidden="true"><app-icon name="grid-squares" [size]="31" [strokeWidth]="2" /></span>
+          }
+          @default {
+            <span class="logo logo--tile"><img [src]="item.logo" alt="" /></span>
+          }
+        }
+        <span class="card__text">
+          <span class="card__name">{{ item.name }}</span>
+          <span class="card__status"><i class="card__dot"></i>{{ item.status }}</span>
+        </span>
+      </a>
+    }
+  </div>
+</section>

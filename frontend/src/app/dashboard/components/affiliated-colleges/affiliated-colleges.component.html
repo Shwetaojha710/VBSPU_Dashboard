@@ -1,0 +1,24 @@
+@let d = data();
+<section class="panel">
+  <header class="panel__head">
+    <h2 class="panel__title">{{ d.title }}</h2>
+    <span class="panel__link">{{ d.linkLabel }}</span>
+  </header>
+
+  <div class="total">
+    <span class="total__label">{{ d.totalLabel }}</span>
+    <span class="total__value">{{ d.total }}</span>
+  </div>
+
+  <svg class="map" viewBox="0 0 421 219" aria-hidden="true">
+    @for (i of paintOrder; track i) {
+      <polygon [attr.points]="shapes[i].points" [attr.fill]="shapes[i].fill" />
+    }
+    @for (district of d.districts; track district.name; let i = $index) {
+      @if (shapes[i]; as shape) {
+        <text class="map__name" [attr.x]="shape.label.x" [attr.y]="shape.label.nameY" text-anchor="middle">{{ district.name }}</text>
+        <text class="map__count" [attr.x]="shape.label.x" [attr.y]="shape.label.countY" text-anchor="middle">{{ district.count }}</text>
+      }
+    }
+  </svg>
+</section>

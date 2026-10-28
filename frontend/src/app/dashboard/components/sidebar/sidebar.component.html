@@ -1,0 +1,21 @@
+<nav class="sidebar" aria-label="Main navigation">
+  <ul class="sidebar__list">
+    @for (item of items(); track item.path) {
+      <li>
+        <a
+          class="sidebar__item"
+          [routerLink]="'/' + item.path"
+          routerLinkActive="sidebar__item--active"
+          [routerLinkActiveOptions]="{ exact: true }"
+          ariaCurrentWhenActive="page"
+        >
+          <app-icon class="sidebar__icon" [name]="item.icon" [size]="18" />
+          <span class="sidebar__label" [class.sidebar__label--dense]="item.dense">{{ item.label }}</span>
+          @if (item.hasChildren) {
+            <app-icon class="sidebar__chevron" name="chevron-right" [size]="12" [strokeWidth]="2" />
+          }
+        </a>
+      </li>
+    }
+  </ul>
+</nav>

@@ -1,0 +1,28 @@
+@let d = data();
+<section class="panel">
+  <header class="heading">
+    <h2 class="heading__title">{{ d.title }}</h2>
+    <a class="heading__link" [routerLink]="'/' + d.link">{{ d.linkLabel }}</a>
+  </header>
+  <ul class="timeline">
+    @for (event of d.items; track $index) {
+      <li>
+        <a class="event" [routerLink]="'/' + d.link">
+          <span class="date">
+            <span class="date__day">{{ event.day }}</span>
+            <span class="date__month">{{ event.month }}</span>
+          </span>
+          <span class="dot" [class.dot--blue]="event.tone === 'blue'"></span>
+          <span class="event__body">
+            <span class="event__title">{{ event.title }}</span>
+            <span class="event__meta">
+              {{ event.time }}
+              <app-icon class="event__pin" name="map-pin" [size]="12" [strokeWidth]="1.8" />
+              {{ event.location }}
+            </span>
+          </span>
+        </a>
+      </li>
+    }
+  </ul>
+</section>
