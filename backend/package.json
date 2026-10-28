@@ -1,0 +1,19 @@
+{
+  "name": "vbspu-dashboard-backend",
+  "version": "1.0.0",
+  "description": "Express API for the VBSPU VC Dashboard",
+  "private": true,
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "cors": "^2.8.6",
+    "dotenv": "^18.0.9",
+    "express": "^4.22.3"
+  }
+}
