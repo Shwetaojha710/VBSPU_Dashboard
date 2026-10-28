@@ -74,6 +74,8 @@ export interface HeaderData {
 export type TrendDirection = 'up' | 'down';
 
 export interface StatCard {
+  /** Identifies cards whose value comes from the database (see DashboardSummary). */
+  key?: keyof DashboardSummary['stats'];
   title: string;
   /** Section route opened when the card is clicked. */
   link?: string;
@@ -208,6 +210,20 @@ export interface ActivityData extends PanelHeading {
 
 export interface EventsData extends PanelHeading {
   items: { day: string; month: string; title: string; time: string; location: string; tone: 'orange' | 'blue' }[];
+}
+
+/** Response of GET /api/dashboard/summary (aggregates from the *_vbspu tables). */
+export interface DashboardSummary {
+  source: 'database';
+  generatedAt: string;
+  stats: {
+    totalStudents: number;
+    affiliatedColleges: number;
+    collegeDistricts: number;
+    facultyAndStaff: number;
+    pendingApprovals: number;
+  };
+  collegesByDistrict: { name: string; colleges: number }[];
 }
 
 export interface DashboardData {

@@ -1,34 +1,34 @@
 <!-- Figma: University digital command centre screen 1 -->
 <div class="screen" id="screen-1">
   <section class="stats" aria-label="Key metrics">
-    @for (card of data.stats; track card.title; let i = $index) {
+    @for (card of data().stats; track card.title; let i = $index) {
       <a class="tile" [routerLink]="'/' + (card.link ?? '')" [attr.aria-label]="card.title + ': ' + card.value">
-        <app-stat-card [card]="card" [sparkline]="data.sparkline" [index]="i" />
+        <app-stat-card [card]="card" [sparkline]="data().sparkline" [index]="i" />
       </a>
     }
   </section>
 
   <section class="panels">
-    <a class="tile tile--wide" routerLink="/exams-certification" [attr.aria-label]="data.digitalEvaluation.title">
-      <app-digital-evaluation [title]="data.digitalEvaluation.title" [metrics]="data.digitalEvaluation.metrics" />
+    <a class="tile tile--wide" routerLink="/exams-certification" [attr.aria-label]="data().digitalEvaluation.title">
+      <app-digital-evaluation [title]="data().digitalEvaluation.title" [metrics]="data().digitalEvaluation.metrics" />
     </a>
-    <a class="tile" routerLink="/finance-hr-campus" [attr.aria-label]="data.feeCollection.title">
-      <app-fee-collection [data]="data.feeCollection" />
+    <a class="tile" routerLink="/finance-hr-campus" [attr.aria-label]="data().feeCollection.title">
+      <app-fee-collection [data]="data().feeCollection" />
     </a>
-    <a class="tile" routerLink="/affiliation-colleges" [attr.aria-label]="data.affiliatedColleges.title">
-      <app-affiliated-colleges [data]="data.affiliatedColleges" />
+    <a class="tile" routerLink="/affiliation-colleges" [attr.aria-label]="data().affiliatedColleges.title">
+      <app-affiliated-colleges [data]="data().affiliatedColleges" />
     </a>
   </section>
 
   <section class="charts">
-    <a class="tile" routerLink="/student-academic" [attr.aria-label]="data.charts.enrollment.title">
-      <app-bar-chart chartId="enrollment" [data]="data.charts.enrollment" [layout]="layouts.enrollment" />
+    <a class="tile" routerLink="/student-academic" [attr.aria-label]="data().charts.enrollment.title">
+      <app-bar-chart chartId="enrollment" [data]="data().charts.enrollment" [layout]="layouts.enrollment" />
     </a>
-    <a class="tile" routerLink="/exams-certification" [attr.aria-label]="data.charts.examResults.title">
-      <app-bar-chart chartId="exam" [data]="data.charts.examResults" [layout]="layouts.examResults" />
+    <a class="tile" routerLink="/exams-certification" [attr.aria-label]="data().charts.examResults.title">
+      <app-bar-chart chartId="exam" [data]="data().charts.examResults" [layout]="layouts.examResults" />
     </a>
-    <a class="tile tile--wide" routerLink="/grievances" [attr.aria-label]="data.charts.grievances.title">
-      <app-bar-chart chartId="grievance" [data]="data.charts.grievances" [layout]="layouts.grievances" />
+    <a class="tile tile--wide" routerLink="/grievances" [attr.aria-label]="data().charts.grievances.title">
+      <app-bar-chart chartId="grievance" [data]="data().charts.grievances" [layout]="layouts.grievances" />
     </a>
   </section>
 </div>

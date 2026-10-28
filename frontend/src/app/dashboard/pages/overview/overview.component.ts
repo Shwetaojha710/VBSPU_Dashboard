@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { ActivityFeedComponent } from '../../components/activity-feed/activity-feed.component';
 import { AffiliatedCollegesComponent } from '../../components/affiliated-colleges/affiliated-colleges.component';
@@ -15,6 +15,7 @@ import { QuickAccessComponent } from '../../components/quick-access/quick-access
 import { ResearchQualityComponent } from '../../components/research-quality/research-quality.component';
 import { StatCardComponent } from '../../components/stat-card/stat-card.component';
 import { DASHBOARD_DATA } from '../../data/dashboard.data';
+import { DashboardStore } from '../../data/dashboard-store.service';
 
 /** Chart geometry measured from the Figma frame (card-relative px). */
 const CHART_LAYOUTS: Record<'enrollment' | 'examResults' | 'grievances', BarChartLayout> = {
@@ -93,7 +94,8 @@ const CHART_LAYOUTS: Record<'enrollment' | 'examResults' | 'grievances', BarChar
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class OverviewComponent {
-  protected readonly data = DASHBOARD_DATA;
+  /** Design data with live database figures applied. */
+  protected readonly data = inject(DashboardStore).data;
   protected readonly layouts = CHART_LAYOUTS;
   protected readonly screen2 = DASHBOARD_DATA.screen2;
   protected readonly screen3 = DASHBOARD_DATA.screen3;

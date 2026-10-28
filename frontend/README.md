@@ -17,7 +17,7 @@ During development, requests to `/api` are proxied to the backend at `http://loc
 
 The overview (route `/`) recreates the Figma frames "University digital command centre screen 1", "screen 2" and "screen 3" (1672 × 941 each), stacked vertically: scroll down to reach screens 2 and 3. Header and sidebar stay pinned, as they appear on every frame.
 
-- Data: `src/app/dashboard/data/dashboard.data.json` (imported at build time — no HTTP calls, no backend needed)
+- Data: `src/app/dashboard/data/dashboard.data.json` holds the design data; `DashboardStore` replaces the figures available in the database with live values from `GET /api/dashboard/summary` (falls back to the JSON if the backend is not running)
 - Types: `src/app/dashboard/dashboard.models.ts`
 - Components: `src/app/dashboard/components/` (header, sidebar, stat card, panels, SVG bar chart, icons)
 - Design tokens: CSS variables in `src/styles.scss`

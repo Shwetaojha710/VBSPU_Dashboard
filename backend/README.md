@@ -28,6 +28,15 @@ src/
 
 ## Endpoints
 
-| Method | Path          | Description  |
-| ------ | ------------- | ------------ |
+| Method | Path | Description |
+| ------ | ---- | ----------- |
 | GET    | `/api/health` | Health check |
+| GET    | `/api/dashboard/summary` | Live dashboard figures from the `*_vbspu` tables (cached 5 min) |
+
+## Database
+
+SQL Server, configured with `DB_*` in `.env` (see `.env.example`). Only tables whose names end in `_vbspu` are read, with aggregate `SELECT` queries over a read-only-intent connection:
+
+- `Student_Data_vbspu`: total students (distinct `RegistrationNo`)
+- `M_College_vbspu`: affiliated colleges, colleges per district
+- `PU_Evaluators_Final_vbspu`: registered evaluators, evaluators pending approval (counts only; personal columns are never selected)

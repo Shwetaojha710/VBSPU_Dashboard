@@ -78,6 +78,11 @@
   line-height: 15px;
 }
 
+/* Without a trend line the caption keeps its position from the design. */
+.stat__caption--solo {
+  margin-top: 28px;
+}
+
 .stat__marker {
   font-size: 9px;
 }

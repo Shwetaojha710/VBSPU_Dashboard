@@ -17,7 +17,7 @@
     <p class="stat__highlight">{{ c.highlight }}</p>
   }
   @if (c.caption) {
-    <p class="stat__caption">
+    <p class="stat__caption" [class.stat__caption--solo]="!c.trend && !c.highlight">
       @if (c.captionMarker) {
         <span class="stat__marker" aria-hidden="true">v</span>
       }
