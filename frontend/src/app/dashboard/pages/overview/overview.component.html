@@ -1,3 +1,10 @@
+<!-- Added above the Figma screens (not part of the design frames): college-wise exam status. -->
+<section class="exam-status" id="exam-status" aria-label="Exam status">
+  <a class="tile" routerLink="/exam-status" aria-label="Exam status – appeared vs online, college-wise">
+    <app-exam-status-card />
+  </a>
+</section>
+
 <!-- Figma: University digital command centre screen 1 -->
 <div class="screen" id="screen-1">
   <section class="stats" aria-label="Key metrics">
@@ -22,13 +29,13 @@
 
   <section class="charts">
     <a class="tile" routerLink="/student-academic" [attr.aria-label]="data().charts.enrollment.title">
-      <app-bar-chart chartId="enrollment" [data]="data().charts.enrollment" [layout]="layouts.enrollment" />
+      <app-bar-chart chartId="enrollment" [data]="data().charts.enrollment" [layout]="layouts().enrollment" />
     </a>
     <a class="tile" routerLink="/exams-certification" [attr.aria-label]="data().charts.examResults.title">
-      <app-bar-chart chartId="exam" [data]="data().charts.examResults" [layout]="layouts.examResults" />
+      <app-bar-chart chartId="exam" [data]="data().charts.examResults" [layout]="layouts().examResults" />
     </a>
     <a class="tile tile--wide" routerLink="/grievances" [attr.aria-label]="data().charts.grievances.title">
-      <app-bar-chart chartId="grievance" [data]="data().charts.grievances" [layout]="layouts.grievances" />
+      <app-bar-chart chartId="grievance" [data]="data().charts.grievances" [layout]="layouts().grievances" />
     </a>
   </section>
 </div>
@@ -36,31 +43,31 @@
 <!-- Figma: University digital command centre screen 2 -->
 <div class="screen" id="screen-2">
   <section class="s2-top">
-    <app-research-quality [data]="screen2.researchQuality" />
+    <app-research-quality [data]="data().screen2.researchQuality" />
     <div class="stack">
-      <app-faculty-development [data]="screen2.facultyDevelopment" />
-      <app-integrations [data]="screen2.integrations" />
+      <app-faculty-development [data]="data().screen2.facultyDevelopment" />
+      <app-integrations [data]="data().screen2.integrations" />
     </div>
   </section>
 
   <section class="s2-mid">
     <div class="stack stack--wide">
-      <app-metric-cards [data]="screen2.communication" [height]="137" />
-      <app-metric-cards [data]="screen2.rti" [height]="132" [cardHeight]="59" />
+      <app-metric-cards [data]="data().screen2.communication" [height]="137" />
+      <app-metric-cards [data]="data().screen2.rti" [height]="132" [cardHeight]="59" />
     </div>
-    <app-ai-insights [data]="screen2.aiInsights" />
+    <app-ai-insights [data]="data().screen2.aiInsights" />
   </section>
 
   <section class="s2-bottom">
-    <app-funnel [data]="screen2.funnel" />
-    <app-quick-access [data]="screen2.quickAccess" />
+    <app-funnel [data]="data().screen2.funnel" />
+    <app-quick-access [data]="data().screen2.quickAccess" />
   </section>
 </div>
 
 <!-- Figma: University digital command centre screen 3 -->
 <div class="screen" id="screen-3">
   <section class="s3">
-    <app-activity-feed [data]="screen3.activity" />
-    <app-events-calendar [data]="screen3.events" />
+    <app-activity-feed [data]="data().screen3.activity" />
+    <app-events-calendar [data]="data().screen3.events" />
   </section>
 </div>

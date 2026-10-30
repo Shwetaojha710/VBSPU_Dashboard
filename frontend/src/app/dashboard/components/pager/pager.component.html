@@ -1,0 +1,33 @@
+<nav class="pager" aria-label="Table pages">
+  <label class="pager__size">
+    Rows per page
+    <select #size (change)="setPageSize(+size.value)">
+      @for (n of pageSizes(); track n) {
+        <option [value]="n" [selected]="n === pageSize()">{{ n }}</option>
+      }
+    </select>
+  </label>
+
+  <div class="pager__pages">
+    <button class="pager__btn" type="button" [disabled]="page() === 0" (click)="goTo(page() - 1)">‹ Previous</button>
+    @for (p of buttons(); track $index) {
+      @if (p === null) {
+        <span class="pager__gap" aria-hidden="true">…</span>
+      } @else {
+        <button
+          class="pager__btn"
+          type="button"
+          [class.pager__btn--active]="p === page()"
+          [attr.aria-current]="p === page() ? 'page' : null"
+          [attr.aria-label]="'Page ' + (p + 1)"
+          (click)="goTo(p)"
+        >
+          {{ p + 1 }}
+        </button>
+      }
+    }
+    <button class="pager__btn" type="button" [disabled]="page() >= pageCount() - 1" (click)="goTo(page() + 1)">
+      Next ›
+    </button>
+  </div>
+</nav>

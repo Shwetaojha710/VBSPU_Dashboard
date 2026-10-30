@@ -1,0 +1,61 @@
+<main class="login">
+  <section class="card" aria-labelledby="login-title">
+    <div class="brand">
+      <img class="brand__logo" [src]="university.logo" alt="VBSPU emblem" width="64" height="64" />
+      <span class="brand__divider" aria-hidden="true"></span>
+      <div class="brand__text">
+        <span class="brand__name">{{ university.shortName }}</span>
+        <span class="brand__subtitle">{{ university.subtitle }}</span>
+      </div>
+    </div>
+
+    <h1 class="card__title" id="login-title">Sign in</h1>
+    <p class="card__text">Use your email ID and password to open the dashboard.</p>
+
+    <form class="form" novalidate (submit)="submit($event, email.value, password.value)">
+      <label class="field">
+        <span class="field__label">Email ID</span>
+        <input
+          #email
+          class="field__input"
+          type="email"
+          name="email"
+          autocomplete="username"
+          inputmode="email"
+          required
+          autofocus
+        />
+      </label>
+
+      <label class="field">
+        <span class="field__label">Password</span>
+        <span class="field__password">
+          <input
+            #password
+            class="field__input"
+            [type]="showPassword() ? 'text' : 'password'"
+            name="password"
+            autocomplete="current-password"
+            required
+          />
+          <button
+            class="field__toggle"
+            type="button"
+            [attr.aria-pressed]="showPassword()"
+            (click)="showPassword.set(!showPassword())"
+          >
+            {{ showPassword() ? 'Hide' : 'Show' }}
+          </button>
+        </span>
+      </label>
+
+      @if (error()) {
+        <p class="form__error" role="alert">{{ error() }}</p>
+      }
+
+      <button class="form__submit" type="submit" [disabled]="submitting()">
+        {{ submitting() ? 'Signing in…' : 'Sign in' }}
+      </button>
+    </form>
+  </section>
+</main>

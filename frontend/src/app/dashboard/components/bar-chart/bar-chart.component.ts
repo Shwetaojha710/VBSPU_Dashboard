@@ -31,6 +31,8 @@ interface Bar {
   height: number;
   label: string;
   series: number;
+  /** Hover text, e.g. "2025-26 · Total: 7.08L". */
+  tooltip: string;
 }
 
 @Component({
@@ -66,7 +68,8 @@ export class BarChartComponent {
           y: l.baselineY - height,
           height,
           label: g.labels[si],
-          series: si
+          series: si,
+          tooltip: g.tooltips?.[si] ?? `${g.label} · ${this.data().series[si]?.name ?? ''}: ${g.labels[si]}`
         };
       });
       return { label: g.label, center: left + groupWidth / 2, bars };
@@ -74,7 +77,10 @@ export class BarChartComponent {
   });
 
   protected readonly trendPoints = computed(() =>
-    this.groups().map((g) => ({ x: g.bars[0].x + this.layout().barWidth / 2, y: g.bars[0].y }))
+    this.groups().map((g) => {
+      const total = g.bars[g.bars.length - 1];
+      return { x: total.x + this.layout().barWidth / 2, y: total.y };
+    })
   );
 
   protected readonly trendPath = computed(() => this.trendPoints().map((p) => `${p.x},${p.y}`).join(' '));

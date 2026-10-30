@@ -1,0 +1,162 @@
+<section class="page">
+  <a class="page__link" routerLink="/" fragment="exam-status">← Back to Overview</a>
+  <h1 class="page__title">
+    Exam Status – Appeared vs Online
+    @if (status()?.session; as session) {
+      <span class="page__period">({{ session }})</span>
+    }
+  </h1>
+  <p class="page__text">
+    A college is <strong>online</strong> when its students are registered, have appeared (their exam result is in the
+    result tables), and have practical and internal marks uploaded. Otherwise it is <strong>pending</strong>, with the
+    missing steps listed.
+  </p>
+
+  @if (status(); as s) {
+    <div class="summary">
+      <div class="summary__item">
+        <span class="summary__label">Affiliated Colleges</span>
+        <span class="summary__value">{{ format(s.totals.colleges) }}</span>
+      </div>
+      <div class="summary__item">
+        <span class="summary__label">Online</span>
+        <span class="summary__value summary__value--online">{{ format(s.totals.online) }}</span>
+      </div>
+      <div class="summary__item">
+        <span class="summary__label">Pending</span>
+        <span class="summary__value summary__value--pending">{{ format(s.totals.pending) }}</span>
+      </div>
+      <div class="summary__item">
+        <span class="summary__label">Students appeared</span>
+        <span class="summary__value">{{ format(s.totals.appeared) }}</span>
+      </div>
+      <div class="summary__item">
+        <span class="summary__label">Students registered</span>
+        <span class="summary__value">{{ format(s.totals.registered) }}</span>
+      </div>
+    </div>
+
+    <div class="toolbar">
+      <div class="filters" role="group" aria-label="Filter colleges">
+        @for (f of filters(); track f.key) {
+          <button
+            class="chip"
+            type="button"
+            [class.chip--active]="filter() === f.key"
+            [attr.aria-pressed]="filter() === f.key"
+            (click)="filter.set(f.key)"
+          >
+            {{ f.label }} <span class="chip__count">{{ format(f.count) }}</span>
+          </button>
+        }
+      </div>
+      <input
+        #search
+        class="search"
+        type="search"
+        placeholder="Search college name or code"
+        aria-label="Search college name or code"
+        (input)="query.set(search.value)"
+      />
+    </div>
+
+    <p class="count">
+      @if (rows().length) {
+        Showing {{ format(range().from) }}–{{ format(range().to) }} of {{ format(range().total) }} colleges
+      } @else {
+        Showing 0 colleges
+      }
+    </p>
+
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th scope="col">Code</th>
+            <th scope="col">College</th>
+            <th scope="col">District</th>
+            <th scope="col" class="num">Registered</th>
+            <th scope="col" class="num">Appeared</th>
+            <th scope="col" class="num">Practical</th>
+            <th scope="col" class="num">Internal</th>
+            <th scope="col">Status</th>
+            <th scope="col">Courses</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (c of pageRows(); track c.code) {
+            <tr [class.open]="openCode() === c.code">
+              <td>{{ c.code }}</td>
+              <td class="college">{{ c.name }}</td>
+              <td>{{ c.district }}</td>
+              <td class="num">{{ format(c.registered) }}</td>
+              <td class="num">{{ format(c.appeared) }}</td>
+              <td class="num">{{ format(c.practical) }}</td>
+              <td class="num">{{ format(c.internal) }}</td>
+              <td>
+                @if (c.status === 'online') {
+                  <span class="badge badge--online">Online</span>
+                } @else {
+                  <span class="badge badge--pending">Pending</span>
+                  <ul class="why">
+                    @for (r of c.reasons; track r) {
+                      <li>{{ reasonLabels().get(r) }}</li>
+                    }
+                  </ul>
+                }
+              </td>
+              <td>
+                @if (coursesFor(c.code); as k) {
+                  <button
+                    class="courses-btn"
+                    type="button"
+                    [attr.aria-expanded]="openCode() === c.code"
+                    [attr.aria-controls]="'courses-' + c.code"
+                    [attr.aria-label]="k.online + ' of ' + k.total + ' courses online, ' + k.pending + ' pending. ' + (openCode() === c.code ? 'Hide' : 'Show') + ' course-wise status of ' + c.name"
+                    (click)="toggle(c.code)"
+                  >
+                    <span class="courses-btn__online">{{ k.online }}/{{ k.total }} online</span>
+                    @if (k.pending) {
+                      <span class="courses-btn__pending">{{ k.pending }} pending</span>
+                    }
+                    <span aria-hidden="true">{{ openCode() === c.code ? '▴' : '▾' }}</span>
+                  </button>
+                } @else {
+                  <span class="muted">{{ courseSummary() ? '—' : '…' }}</span>
+                }
+              </td>
+            </tr>
+            @if (openCode() === c.code) {
+              <tr class="courses-row">
+                <td colspan="9">
+                  <app-college-courses
+                    [attr.id]="'courses-' + c.code"
+                    role="region"
+                    [attr.aria-label]="'Course-wise status of ' + c.name"
+                    [code]="c.code"
+                    [name]="c.name"
+                  />
+                </td>
+              </tr>
+            }
+          } @empty {
+            <tr>
+              <td colspan="9" class="empty">No colleges match.</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <app-pager [total]="rows().length" [(page)]="page" [(pageSize)]="pageSize" />
+  } @else {
+    <p class="page__text">
+      {{
+        error()
+          ? 'Could not load the exam status. Please refresh the page.'
+          : 'Loading exam status… The first load after the server starts can take 2–3 minutes.'
+      }}
+    </p>
+  }
+
+</section>

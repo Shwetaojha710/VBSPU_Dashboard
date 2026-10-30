@@ -8,8 +8,12 @@
   <p class="stat__value">{{ c.value }}</p>
 
   @if (c.trend; as trend) {
-    <p class="stat__trend" [class.stat__trend--down]="trend.direction === 'down'">
-      <span class="stat__arrow" aria-hidden="true">{{ trend.direction === 'up' ? '▲' : '▼' }}</span>
+    <p
+      class="stat__trend"
+      [class.stat__trend--down]="trend.direction === 'down'"
+      [class.stat__trend--flat]="trend.direction === 'flat'"
+    >
+      <span class="stat__arrow" aria-hidden="true">{{ trend.direction === 'up' ? '▲' : trend.direction === 'down' ? '▼' : '–' }}</span>
       {{ trend.value }}
     </p>
   }

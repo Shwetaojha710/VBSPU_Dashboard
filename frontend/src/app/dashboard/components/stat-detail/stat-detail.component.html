@@ -1,0 +1,48 @@
+@let c = card();
+<div class="metric">
+  <span class="metric__label">{{ detail()?.title ?? c.title }}</span>
+  <span class="metric__value">{{ c.value }}</span>
+</div>
+
+@switch (state()) {
+  @case ('loading') {
+    <p class="note">Loading data…</p>
+  }
+  @case ('error') {
+    <p class="note">Could not load the data. Please try again in a moment.</p>
+  }
+  @case ('unavailable') {
+    <p class="note">This figure is not available in the university database yet.</p>
+  }
+  @case ('ready') {
+    <div class="sections">
+      @for (section of detail()!.sections; track section.title) {
+        <section class="block" [class.block--wide]="section.columns.length > 2">
+          <h2 class="block__title">{{ section.title }}</h2>
+          @if (section.rows.length) {
+            <table class="table">
+              <thead>
+                <tr>
+                  @for (column of section.columns; track $index) {
+                    <th scope="col" [class.num]="isNumeric(section.rows[0][$index])">{{ column }}</th>
+                  }
+                </tr>
+              </thead>
+              <tbody>
+                @for (row of section.rows; track $index) {
+                  <tr>
+                    @for (cell of row; track $index) {
+                      <td [class.num]="isNumeric(cell)">{{ format(cell) }}</td>
+                    }
+                  </tr>
+                }
+              </tbody>
+            </table>
+          } @else {
+            <p class="note">No records.</p>
+          }
+        </section>
+      }
+    </div>
+  }
+}

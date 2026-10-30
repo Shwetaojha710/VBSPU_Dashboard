@@ -1,0 +1,120 @@
+@if (data(); as d) {
+  <div class="head">
+    <div>
+      <h3 class="head__title">
+        Course-wise status
+        @if (name()) {
+          <span class="head__college">· {{ name() }}</span>
+        }
+      </h3>
+      <p class="head__text">
+        <strong class="ok">{{ format(counts().online) }} online</strong> and
+        <strong class="warn">{{ format(counts().pending) }} pending</strong> of {{ format(counts().all) }}
+        course-semesters in {{ d.session }}.
+      </p>
+    </div>
+
+    <div class="tools">
+      <div class="filters" role="group" aria-label="Show courses">
+        @for (f of filters(); track f.key) {
+          <button
+            class="chip"
+            type="button"
+            [class.chip--active]="filter() === f.key"
+            [attr.aria-pressed]="filter() === f.key"
+            (click)="filter.set(f.key)"
+          >
+            {{ f.label }} <span class="chip__count">{{ format(f.count) }}</span>
+          </button>
+        }
+      </div>
+      <input
+        #search
+        class="search"
+        type="search"
+        placeholder="Search course"
+        aria-label="Search course"
+        [value]="query()"
+        (input)="query.set(search.value)"
+      />
+    </div>
+  </div>
+
+  <p class="legend">
+    <span><span class="mark mark--done" aria-hidden="true">✓</span> done ({{ d.donePercent }}%+ students)</span>
+    <span><span class="mark mark--short" aria-hidden="true">!</span> students still missing</span>
+    <span><span class="mark" aria-hidden="true">—</span> not part of this course</span>
+  </p>
+
+  @if (rows().length) {
+    <div class="wrap">
+      <table class="courses">
+        <caption class="sr-only">Course-wise exam status{{ name() ? ' of ' + name() : '' }}</caption>
+        <thead>
+          <tr>
+            <th scope="col">Course</th>
+            <th scope="col">Sem</th>
+            <th scope="col">Exam</th>
+            <th scope="col" class="num">Students</th>
+            <th scope="col">Theory marks</th>
+            <th scope="col">Practical marks</th>
+            <th scope="col">Internal marks</th>
+            <th scope="col">Result declared</th>
+            <th scope="col">Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (c of pageRows(); track c.course + c.semester + c.exam) {
+            <tr>
+              <th scope="row" class="course">{{ c.course }}</th>
+              <td>{{ c.semester }}</td>
+              <td class="nowrap">{{ c.exam }}</td>
+              <td class="num">{{ format(c.students) }}</td>
+              @for (s of c.steps; track $index) {
+                <td>
+                  <span class="step" [class]="'step--' + s.state" [attr.title]="s.label">
+                    <span class="sr-only">{{ s.label }}</span>
+                    <span class="step__line" aria-hidden="true">
+                      <span class="mark" [class]="'mark--' + s.state">{{ s.state === 'done' ? '✓' : s.state === 'short' ? '!' : '' }}</span>
+                      {{ s.text }}
+                    </span>
+                    @if (s.state !== 'na') {
+                      <span class="step__bar" aria-hidden="true"><span [style.width.%]="s.percent"></span></span>
+                    }
+                  </span>
+                </td>
+              }
+              <td>
+                @if (c.status === 'online') {
+                  <span class="badge badge--online">✓ Online</span>
+                } @else {
+                  <span class="badge badge--pending">Pending</span>
+                  <ul class="why">
+                    @for (r of c.reasons; track r) {
+                      <li>{{ d.reasons[r] }}</li>
+                    }
+                  </ul>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <div class="foot">
+      <p class="count">
+        Showing {{ format(range().from) }}–{{ format(range().to) }} of {{ format(range().total) }} course-semesters
+      </p>
+      @if (range().total > 10) {
+        <app-pager [total]="rows().length" [pageSizes]="[10, 25, 50]" [(page)]="page" [(pageSize)]="pageSize" />
+      }
+    </div>
+  } @else {
+    <p class="note">
+      {{ counts().all ? 'No courses match.' : 'No course records for this college in ' + d.session + '.' }}
+    </p>
+  }
+} @else {
+  <p class="note" role="status">{{ error() ? 'Could not load the courses.' : 'Loading courses…' }}</p>
+}

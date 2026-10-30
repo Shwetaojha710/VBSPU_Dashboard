@@ -15,6 +15,9 @@ out-tsc/
 coverage/
 .angular/
 
+# Dashboard data cache (backend/.cache)
+.cache/
+
 # Logs
 logs/
 *.log

@@ -5,8 +5,6 @@
     "logo": "assets/images/vbspu-logo.png"
   },
   "header": {
-    "date": "Mon, 26 May 2025",
-    "time": "11:42 AM",
     "searchPlaceholder": "Search students, colleges, files, reports...",
     "actions": [
       {
@@ -195,6 +193,7 @@
       "captionMarker": true
     },
     {
+      "key": "activeGrievances",
       "title": "Active Grievances",
       "link": "grievances",
       "value": "263",
@@ -207,6 +206,7 @@
       "captionMarker": true
     },
     {
+      "key": "examsInProgress",
       "title": "Exams in Progress",
       "link": "exams-certification",
       "value": "12",
@@ -215,6 +215,7 @@
       "caption": "Answer Scripts"
     },
     {
+      "key": "passedStudents",
       "title": "Scholarship Applications",
       "link": "scholarships",
       "value": "18,762",
@@ -301,7 +302,7 @@
   "affiliatedColleges": {
     "title": "Affiliated Colleges – District Wise",
     "linkLabel": "View Details →",
-    "totalLabel": "Toral Affiliated Colleges",
+    "totalLabel": "Total Affiliated Colleges",
     "total": 589,
     "districts": [
       {

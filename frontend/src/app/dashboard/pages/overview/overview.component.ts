@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { ActivityFeedComponent } from '../../components/activity-feed/activity-feed.component';
 import { AffiliatedCollegesComponent } from '../../components/affiliated-colleges/affiliated-colleges.component';
@@ -8,13 +8,13 @@ import { DigitalEvaluationComponent } from '../../components/digital-evaluation/
 import { EventsCalendarComponent } from '../../components/events-calendar/events-calendar.component';
 import { FacultyDevelopmentComponent } from '../../components/faculty-development/faculty-development.component';
 import { FeeCollectionComponent } from '../../components/fee-collection/fee-collection.component';
+import { ExamStatusCardComponent } from '../../components/exam-status-card/exam-status-card.component';
 import { FunnelComponent } from '../../components/funnel/funnel.component';
 import { IntegrationsComponent } from '../../components/integrations/integrations.component';
 import { MetricCardsComponent } from '../../components/metric-cards/metric-cards.component';
 import { QuickAccessComponent } from '../../components/quick-access/quick-access.component';
 import { ResearchQualityComponent } from '../../components/research-quality/research-quality.component';
 import { StatCardComponent } from '../../components/stat-card/stat-card.component';
-import { DASHBOARD_DATA } from '../../data/dashboard.data';
 import { DashboardStore } from '../../data/dashboard-store.service';
 
 /** Chart geometry measured from the Figma frame (card-relative px). */
@@ -87,7 +87,8 @@ const CHART_LAYOUTS: Record<'enrollment' | 'examResults' | 'grievances', BarChar
     FunnelComponent,
     QuickAccessComponent,
     ActivityFeedComponent,
-    EventsCalendarComponent
+    EventsCalendarComponent,
+    ExamStatusCardComponent
   ],
   templateUrl: './overview.component.html',
   styleUrl: './overview.component.scss',
@@ -96,7 +97,32 @@ const CHART_LAYOUTS: Record<'enrollment' | 'examResults' | 'grievances', BarChar
 export class OverviewComponent {
   /** Design data with live database figures applied. */
   protected readonly data = inject(DashboardStore).data;
-  protected readonly layouts = CHART_LAYOUTS;
-  protected readonly screen2 = DASHBOARD_DATA.screen2;
-  protected readonly screen3 = DASHBOARD_DATA.screen3;
+
+  /** The charts were designed for 5 bars; fewer bars keep the same first and last position. */
+  protected readonly layouts = computed(() => {
+    const charts = this.data().charts;
+    return {
+      ...CHART_LAYOUTS,
+      enrollment: spreadGroups(CHART_LAYOUTS.enrollment, charts.enrollment.groups.length, charts.enrollment.series.length),
+      examResults: spreadGroups(CHART_LAYOUTS.examResults, charts.examResults.groups.length, 1),
+      grievances: spreadGroups(CHART_LAYOUTS.grievances, charts.grievances.groups.length, charts.grievances.series.length, 2)
+    };
+  });
+}
+
+/**
+ * The charts were designed for 5 groups (`designSeries` bars each). Other shapes keep the design's
+ * left and right edges: groups with extra bars get narrower bars, and the groups are spread evenly.
+ */
+function spreadGroups(layout: BarChartLayout, groups: number, series: number, designSeries = 1): BarChartLayout {
+  if (groups === 5 && series === designSeries) {
+    return layout;
+  }
+  const barWidth = series > designSeries ? 26 : layout.barWidth;
+  const barGap = series > designSeries ? 4 : layout.barGap;
+  const groupWidth = series * barWidth + (series - 1) * barGap;
+  const designGroupWidth = designSeries * layout.barWidth + (designSeries - 1) * layout.barGap;
+  const rightEdge = layout.firstBarX + layout.groupPitch * 4 + designGroupWidth;
+  const groupPitch = groups > 1 ? (rightEdge - groupWidth - layout.firstBarX) / (groups - 1) : layout.groupPitch;
+  return { ...layout, barWidth, barGap, groupPitch };
 }

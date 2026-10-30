@@ -1,35 +1,45 @@
 const sql = require('mssql');
 const config = require('./index');
 
-let poolPromise;
-
 /**
- * Shared SQL Server connection pool. The dashboard only reads data, so the
+ * Lazily created SQL Server connection pool. The dashboard only reads data, so the
  * connection declares read-only intent; queries in this app are SELECT-only.
  */
-const getPool = () => {
-  if (!config.db.server || !config.db.database) {
-    throw new Error('Database is not configured (DB_HOST / DB_NAME missing in .env)');
-  }
-  if (!poolPromise) {
-    poolPromise = new sql.ConnectionPool({
-      server: config.db.server,
-      port: config.db.port,
-      database: config.db.database,
-      user: config.db.user,
-      password: config.db.password,
-      options: { encrypt: config.db.encrypt, trustServerCertificate: true, readOnlyIntent: true },
-      pool: { max: 5, min: 0, idleTimeoutMillis: 30000 },
-      connectionTimeout: 20000,
-      requestTimeout: 60000,
-    })
-      .connect()
-      .catch((err) => {
-        poolPromise = undefined;
-        throw err;
-      });
-  }
-  return poolPromise;
+const poolFor = (settings, label) => {
+  let poolPromise;
+  return () => {
+    if (!settings.server || !settings.database) {
+      throw new Error(`${label} is not configured (host / database name missing in .env)`);
+    }
+    if (!poolPromise) {
+      poolPromise = new sql.ConnectionPool({
+        server: settings.server,
+        port: settings.port,
+        database: settings.database,
+        user: settings.user,
+        password: settings.password,
+        // useUTC: false — the databases store local (IST) timestamps.
+        options: { encrypt: settings.encrypt, trustServerCertificate: true, readOnlyIntent: true, useUTC: false },
+        pool: { max: 5, min: 0, idleTimeoutMillis: 30000 },
+        connectionTimeout: 20000,
+        // Dashboard queries scan multi-million-row tables on shared, often busy servers. They run
+        // one at a time in the background (results are cached on disk), so allow up to 10 minutes.
+        requestTimeout: 600000,
+      })
+        .connect()
+        .catch((err) => {
+          poolPromise = undefined;
+          throw err;
+        });
+    }
+    return poolPromise;
+  };
 };
 
-module.exports = { sql, getPool };
+/** Main university database (DB_* in .env). */
+const getPool = poolFor(config.db, 'Database');
+
+/** Second database, PU_2026: course-wise nominal rolls, marks and results (DB2_* in .env). */
+const getPool2 = poolFor(config.db2, 'Second database (DB2)');
+
+module.exports = { sql, getPool, getPool2 };

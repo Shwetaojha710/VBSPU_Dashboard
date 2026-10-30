@@ -64,14 +64,13 @@ export interface UserMenuItem {
 }
 
 export interface HeaderData {
-  date: string;
-  time: string;
   searchPlaceholder: string;
   actions: HeaderAction[];
   user: { name: string; avatar: string; menu: UserMenuItem[] };
 }
 
-export type TrendDirection = 'up' | 'down';
+/** 'flat' marks no change since the comparison point (shown as "– 0%"). */
+export type TrendDirection = 'up' | 'down' | 'flat';
 
 export interface StatCard {
   /** Identifies cards whose value comes from the database (see DashboardSummary). */
@@ -131,17 +130,21 @@ export interface ChartGroup {
   values: number[];
   /** Labels printed above each bar, one per series. */
   labels: string[];
+  /** Hover text per bar; defaults to "<group> · <series>: <label>". */
+  tooltips?: string[];
 }
 
 export interface BarChartData {
   title: string;
+  /** One line under the title explaining what the chart counts. */
+  subtitle?: string;
   /** Legend-only entries are listed in `legend`; `series` defines the drawn bars. */
   legend: { name: string; color: string }[];
   series: ChartSeries[];
   yTicks: { value: number; label: string }[];
   yMax: number;
   groups: ChartGroup[];
-  /** Draw a trend line through the tops of the first series. */
+  /** Draw a trend line through the tops of the last series (the total). */
   trendLine?: boolean;
 }
 
@@ -212,18 +215,106 @@ export interface EventsData extends PanelHeading {
   items: { day: string; month: string; title: string; time: string; location: string; tone: 'orange' | 'blue' }[];
 }
 
-/** Response of GET /api/dashboard/summary (aggregates from the *_vbspu tables). */
+/** Response of GET /api/dashboard/summary (read-only aggregates from the university database). */
 export interface DashboardSummary {
   source: 'database';
   generatedAt: string;
+  /** Latest result session, e.g. "2025-26". */
+  resultSession: string | null;
   stats: {
     totalStudents: number;
     affiliatedColleges: number;
+    newColleges: number;
     collegeDistricts: number;
     facultyAndStaff: number;
     pendingApprovals: number;
+    activeGrievances: number;
+    examsInProgress: number;
+    answerScripts: number;
+    passedStudents: number;
+    phdScholars: number;
   };
+  /** Comparison values for the "vs last ..." trends. */
+  previous: Partial<Record<keyof DashboardSummary['stats'], number>>;
   collegesByDistrict: { name: string; colleges: number }[];
+  /** Students registered per session, oldest first. */
+  enrollment: { session: string; students: number }[];
+  passPercentage: { session: string; percent: number }[];
+  grievanceTrend: { year: number; month: string; received: number; resolved: number }[];
+  /** Received/resolved per calendar year for the last three years. */
+  grievancesByYear?: { year: number; received: number; resolved: number }[];
+  activity: { title: string; detail: string; at: string }[];
+}
+
+/** Response of GET /api/dashboard/enrollment-by-type — UG and PG students per session. */
+export type EnrollmentByType = { session: string; ug: number; pg: number }[];
+
+/** Response of GET /api/dashboard/details/:key — breakdown tables behind one stat card. */
+export interface StatDetail {
+  key: string;
+  generatedAt: string;
+  title: string;
+  sections: { title: string; columns: string[]; rows: (string | number)[][] }[];
+}
+
+export type ExamStatusReason = 'noStudents' | 'examNotHeld' | 'practicalPending' | 'internalPending';
+
+/** Response of GET /api/dashboard/exam-status — appeared vs online per affiliated college. */
+export interface ExamStatus {
+  generatedAt: string;
+  session: string | null;
+  totals: {
+    colleges: number;
+    online: number;
+    pending: number;
+    registered: number;
+    appeared: number;
+    collegesAppeared: number;
+  };
+  reasons: { key: ExamStatusReason; label: string; colleges: number }[];
+  colleges: {
+    code: string;
+    name: string;
+    district: string;
+    registered: number;
+    appeared: number;
+    practical: number;
+    internal: number;
+    status: 'online' | 'pending';
+    reasons: ExamStatusReason[];
+  }[];
+}
+
+/** Response of GET /api/dashboard/course-status — online/pending course counts per college code. */
+export interface CourseSummary {
+  generatedAt: string;
+  session: string;
+  /** A course stage counts as done at this share of its students. */
+  donePercent: number;
+  colleges: Record<string, { total: number; online: number; pending: number }>;
+}
+
+/** One course + semester of a college, from GET /api/dashboard/course-status/:code. */
+export interface CourseStatusRow {
+  course: string;
+  semester: string;
+  exam: string;
+  students: number;
+  theory: number;
+  /** null when the course has no practical (no college uploaded any). */
+  practical: number | null;
+  internal: number | null;
+  result: number;
+  status: 'online' | 'pending';
+  reasons: string[];
+}
+
+export interface CollegeCourses {
+  code: string;
+  session: string;
+  donePercent: number;
+  reasons: Record<string, string>;
+  courses: CourseStatusRow[];
 }
 
 export interface DashboardData {

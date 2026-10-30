@@ -21,6 +21,18 @@
   white-space: nowrap;
 }
 
+.chart__subtitle {
+  position: relative;
+  z-index: 1;
+  margin: 3px 0 0;
+  overflow: hidden;
+  color: var(--color-text-secondary);
+  font-size: 12.5px;
+  line-height: 14px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .chart__legend {
   position: relative;
   z-index: 1;
@@ -30,6 +42,11 @@
   margin: 17px 0 0;
   padding: 0;
   list-style: none;
+}
+
+/* With a subtitle the legend moves up so the plot keeps its place. */
+.chart__legend--tight {
+  margin-top: 6px;
 }
 
 .chart__legend-item {
@@ -76,6 +93,14 @@
   fill: var(--color-text-primary);
   font-size: 12px;
   font-weight: 700;
+}
+
+.chart__bar {
+  transition: opacity 0.15s;
+
+  &:hover {
+    opacity: 0.8;
+  }
 }
 
 .chart__trend {

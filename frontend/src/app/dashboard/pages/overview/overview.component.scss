@@ -17,6 +17,12 @@
   }
 }
 
+/* Exam status card, after the three design screens */
+.exam-status {
+  margin-bottom: 14px;
+  scroll-margin-top: calc(var(--header-height) + 14px);
+}
+
 /* Screen 2 */
 .s2-top {
   display: grid;

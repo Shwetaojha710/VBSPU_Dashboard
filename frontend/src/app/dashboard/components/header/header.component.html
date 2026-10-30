@@ -10,8 +10,8 @@
 
   <div class="topbar">
     <a class="datetime" routerLink="/" fragment="screen-3" aria-label="Upcoming events and calendar">
-      <span class="datetime__date">{{ data().date }}</span>
-      <span class="datetime__time">{{ data().time }}</span>
+      <time class="datetime__date" [attr.datetime]="now().toISOString()">{{ date() }}</time>
+      <span class="datetime__time">{{ time() }}</span>
     </a>
 
     <form class="search" role="search" (submit)="search($event, query.value)">
@@ -51,11 +51,17 @@
 
       @if (menuOpen()) {
         <ul class="user-menu__list" role="menu">
+          @if (email(); as signedIn) {
+            <li class="user-menu__account" role="none">Signed in as <strong>{{ signedIn }}</strong></li>
+          }
           @for (item of data().user.menu; track item.path) {
             <li role="none">
               <a class="user-menu__item" role="menuitem" [routerLink]="'/' + item.path" (click)="closeMenu()">{{ item.label }}</a>
             </li>
           }
+          <li role="none">
+            <button class="user-menu__item user-menu__item--logout" type="button" role="menuitem" (click)="logout()">Logout</button>
+          </li>
         </ul>
       }
     </div>

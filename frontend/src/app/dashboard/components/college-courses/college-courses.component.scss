@@ -1,0 +1,253 @@
+/* Amber that keeps 4.5:1 contrast on the light panel; green likewise. */
+$ok: #00733a;
+$warn: #8f5100;
+
+:host {
+  display: block;
+  padding: 12px 14px 14px;
+  border-left: 3px solid var(--color-sidebar-active);
+  background: var(--color-surface-muted);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 10px 16px;
+}
+
+.head__title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.head__college {
+  color: var(--color-text-secondary);
+  font-weight: 400;
+}
+
+.head__text {
+  margin: 2px 0 0;
+  color: var(--color-text-secondary);
+  font-size: 14px;
+}
+
+.ok {
+  color: $ok;
+}
+
+.warn {
+  color: $warn;
+}
+
+.tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.filters {
+  display: flex;
+  gap: 6px;
+}
+
+.chip {
+  padding: 4px 10px;
+  border: 1px solid var(--color-border-panel);
+  border-radius: var(--radius-pill);
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: 2px solid var(--color-sidebar-active);
+    outline-offset: 2px;
+  }
+}
+
+.chip--active {
+  border-color: var(--color-sidebar);
+  background: var(--color-sidebar);
+  color: var(--color-text-inverse);
+}
+
+.chip__count {
+  font-weight: 700;
+}
+
+.search {
+  width: 190px;
+  height: 32px;
+  padding: 0 10px;
+  border: 1px solid var(--color-border-panel);
+  border-radius: var(--radius-panel);
+  font: inherit;
+  font-size: 13.5px;
+
+  &:focus {
+    border-color: var(--color-sidebar-active);
+    outline: 2px solid rgba(129, 81, 170, 0.2);
+  }
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  margin: 10px 0 6px;
+  color: var(--color-text-secondary);
+  font-size: 12.5px;
+}
+
+.wrap {
+  overflow-x: auto;
+  border: 1px solid var(--color-border-soft);
+  border-radius: var(--radius-panel);
+  background: var(--color-surface);
+}
+
+.courses {
+  width: 100%;
+  min-width: 900px;
+  border-collapse: collapse;
+  font-size: 13.5px;
+
+  th,
+  td {
+    padding: 7px 10px;
+    border-bottom: 1px solid var(--color-border-soft);
+    text-align: left;
+    vertical-align: top;
+  }
+
+  thead th {
+    color: var(--color-text-secondary);
+    font-weight: 500;
+    white-space: nowrap;
+  }
+
+  td,
+  .course {
+    color: var(--color-text-primary);
+    font-weight: 400;
+  }
+
+  .num {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+
+  tbody tr:last-child > * {
+    border-bottom: 0;
+  }
+}
+
+.nowrap {
+  white-space: nowrap;
+}
+
+.step {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 92px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.step--short {
+  color: $warn;
+  font-weight: 500;
+}
+
+.step--na {
+  color: var(--color-text-secondary);
+}
+
+.step__bar {
+  height: 4px;
+  overflow: hidden;
+  border-radius: var(--radius-pill);
+  background: var(--color-ring-track);
+
+  span {
+    display: block;
+    height: 100%;
+    background: $warn;
+  }
+}
+
+.step--done .step__bar span {
+  background: var(--color-success);
+}
+
+.mark {
+  display: inline-block;
+  width: 12px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.mark--done {
+  color: $ok;
+}
+
+.mark--short {
+  color: $warn;
+}
+
+.badge {
+  display: inline-block;
+  padding: 1px 9px;
+  border-radius: var(--radius-pill);
+  font-size: 12.5px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.badge--online {
+  background: #e3f8ec;
+  color: $ok;
+}
+
+.badge--pending {
+  background: #fff1e0;
+  color: $warn;
+}
+
+.why {
+  margin: 4px 0 0;
+  padding-left: 16px;
+  color: var(--color-text-secondary);
+  font-size: 12.5px;
+}
+
+.foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.count,
+.note {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: 13.5px;
+}

@@ -2,8 +2,11 @@
 @let l = layout();
 <section class="chart" [style.height.px]="l.height">
   <h2 class="chart__title">{{ d.title }}</h2>
+  @if (d.subtitle) {
+    <p class="chart__subtitle" [attr.title]="d.subtitle">{{ d.subtitle }}</p>
+  }
 
-  <ul class="chart__legend">
+  <ul class="chart__legend" [class.chart__legend--tight]="d.subtitle">
     @for (item of d.legend; track item.name) {
       <li class="chart__legend-item">
         <span class="chart__dot" [style.background]="item.color"></span>{{ item.name }}
@@ -30,7 +33,9 @@
 
     @for (group of groups(); track group.label) {
       @for (bar of group.bars; track bar.series) {
-        <path [attr.d]="barPath(bar)" [attr.fill]="'url(#' + gradientId(bar.series) + ')'" />
+        <path class="chart__bar" [attr.d]="barPath(bar)" [attr.fill]="'url(#' + gradientId(bar.series) + ')'">
+          <title>{{ bar.tooltip }}</title>
+        </path>
         <text class="chart__value" [attr.x]="bar.x + l.barWidth / 2" [attr.y]="bar.y - l.valueLabelOffset" text-anchor="middle">{{ bar.label }}</text>
       }
       <text

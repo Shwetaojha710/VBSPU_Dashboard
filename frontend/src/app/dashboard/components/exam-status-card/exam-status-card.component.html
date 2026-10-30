@@ -1,0 +1,66 @@
+<section class="panel">
+  <header class="panel__head">
+    <h2 class="panel__title">
+      Exam Status – Appeared vs Online
+      @if (view()?.session; as session) {
+        <span class="panel__period">({{ session }})</span>
+      }
+    </h2>
+    <span class="panel__link">View College-wise →</span>
+  </header>
+
+  @if (view(); as v) {
+    <div class="body">
+      <div class="kpis">
+        <div class="kpi">
+          <span class="kpi__label">Affiliated Colleges</span>
+          <span class="kpi__value">{{ v.colleges }}</span>
+        </div>
+        <div class="kpi">
+          <span class="kpi__label">Online (completed)</span>
+          <span class="kpi__value kpi__value--online">{{ v.online }} <small>({{ v.onlinePct }}%)</small></span>
+        </div>
+        <div class="kpi">
+          <span class="kpi__label">Pending</span>
+          <span class="kpi__value kpi__value--pending">{{ v.pending }} <small>({{ v.pendingPct }}%)</small></span>
+        </div>
+      </div>
+
+      <div class="progress">
+        <div class="bar" role="img" [attr.aria-label]="v.online + ' online, ' + v.pending + ' pending'">
+          <span class="bar__online" [style.width.%]="v.onlinePct"></span>
+          <span class="bar__pending" [style.width.%]="100 - v.onlinePct"></span>
+        </div>
+        <ul class="legend">
+          <li><span class="dot dot--online"></span>Online</li>
+          <li><span class="dot dot--pending"></span>Pending</li>
+        </ul>
+        <p class="appeared">
+          <strong>{{ v.appeared }}</strong> students appeared in <strong>{{ v.collegesAppeared }}</strong> colleges
+          <span>(of {{ v.registered }} registered)</span>
+        </p>
+      </div>
+
+      <div class="reasons">
+        <h3 class="reasons__title">Why pending</h3>
+        <ul class="reasons__list">
+          @for (r of v.reasons; track r.key) {
+            <li class="reason">
+              <span class="reason__label">{{ r.label }}</span>
+              <span class="reason__track"><span class="reason__fill" [style.width.%]="r.width"></span></span>
+              <span class="reason__value">{{ r.value }}</span>
+            </li>
+          }
+        </ul>
+      </div>
+    </div>
+  } @else {
+    <p class="note">
+      {{
+        error()
+          ? 'Could not load the exam status. Please refresh the page.'
+          : 'Loading exam status… The first load after the server starts can take 2–3 minutes.'
+      }}
+    </p>
+  }
+</section>
