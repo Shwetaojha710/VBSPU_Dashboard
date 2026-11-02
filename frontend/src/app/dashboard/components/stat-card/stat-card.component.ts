@@ -6,6 +6,12 @@ const SPARK_STEP = 4;
 const SPARK_BASE = 45;
 const SPARK_FILL_BOTTOM = 48;
 const RING_RADIUS = 20.5;
+/**
+ * Gap between the sparkline and the card's right edge for each column of the 4-column grid,
+ * as in the Figma frame (cards 332 / 332 / 344 / 375 px wide). Anchoring to the right keeps
+ * the sparkline in its designed place when wider screens make the cards wider.
+ */
+const SPARK_RIGHT_BY_COLUMN = [14, 14, 26, 16];
 
 @Component({
   selector: 'app-stat-card',
@@ -37,6 +43,8 @@ export class StatCardComponent {
     const last = pts[pts.length - 1][0];
     return `M${first},${SPARK_FILL_BOTTOM} L${this.sparkLine()} L${last},${SPARK_FILL_BOTTOM} Z`;
   });
+
+  protected readonly sparkRight = computed(() => SPARK_RIGHT_BY_COLUMN[this.index() % SPARK_RIGHT_BY_COLUMN.length]);
 
   protected readonly ringOffset = computed(() => {
     const percent = this.card().progress?.percent ?? 0;

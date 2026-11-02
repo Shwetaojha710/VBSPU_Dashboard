@@ -51,7 +51,7 @@
     </div>
   }
 
-  <svg class="stat__spark" viewBox="0 0 84 50" width="84" height="50" aria-hidden="true">
+  <svg class="stat__spark" [style.right.px]="sparkRight()" viewBox="0 0 84 50" width="84" height="50" aria-hidden="true">
     <defs>
       <linearGradient [attr.id]="'spark-fill-' + index()" x1="0" y1="0" x2="0" y2="1">
         <stop offset="0" stop-color="#ec268f" stop-opacity="0.32" />

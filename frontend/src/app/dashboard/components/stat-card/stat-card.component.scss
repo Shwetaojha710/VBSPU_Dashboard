@@ -134,16 +134,10 @@
   line-height: 16px;
 }
 
+/* Horizontal place comes from the template (right edge offset per grid column). */
 .stat__spark {
   position: absolute;
   top: 66px;
-  left: 234px;
-}
-
-/* In the design the last column anchors its sparkline to the right edge instead. */
-:host(:nth-child(4n)) .stat__spark {
-  left: auto;
-  right: 16px;
 }
 
 .stat__spark-line {
