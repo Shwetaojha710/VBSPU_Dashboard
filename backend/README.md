@@ -40,7 +40,7 @@ src/
 | GET    | `/api/dashboard/course-status` | Online/pending course counts per college (second database, PU_2026) |
 | GET    | `/api/dashboard/course-status/:code` | Course-wise exam status for one college: students, theory, practical and internal marks, result |
 | GET    | `/api/dashboard/exam-supervision/dates` | Distinct exam dates from schedule tables (`Ug1`/`PG1`/`UG3`/`UG5`/`Pg5`) |
-| GET    | `/api/dashboard/exam-supervision?date=YYYY-MM-DD` | Date-wise अनुश्रवण प्रपत्र by पाली (same logic as `ExamEnquiryDetails`) |
+| GET    | `/api/dashboard/exam-supervision?date=YYYY-MM-DD` | Date-wise अनुश्रवण प्रपत्र by पाली — today via `ExamEnquiryDetails` SP; other dates use same SP SQL |
 | GET    | `/api/dashboard/exam-evaluators` | Exam evaluator list via `Proc_ExamEvaluatorList` (`status`, `uniqueId`, `name`, `contactNo`, `adharNo`, `subject`) |
 | GET    | `/api/dashboard/exam-evaluators/subjects` | Distinct subjects for evaluator filter dropdown |
 | GET    | `/api/dashboard/exam-evaluators/:uniqueId/print` | Teacher Registration print detail (photo/sign/aadhar URLs) |

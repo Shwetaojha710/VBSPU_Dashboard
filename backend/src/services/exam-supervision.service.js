@@ -1,37 +1,40 @@
 const { getPool, sql } = require('../config/db');
 
 /**
- * Exam supervision प्रपत्र — same logic as dbo.ExamEnquiryDetails
- * (Student_Data → EVEN_SEM_PAPERS → PaperMaster → Ug1/PG1/UG3/UG5/Pg5 → MeetingMaster,
- * ExamAttendance on CreatedAt date). COUNT(*) + Gender 'Male'/'FeMale'. SessionId = 4.
+ * Exam supervision प्रपत्र — driven by dbo.ExamEnquiryDetails.
+ * SP itself always uses "today IST" (DATEADD(MINUTE,330,GETUTCDATE())).
+ * For other selected dates we run the same SP body with @examDate.
  */
 
-const SCHEDULE_BRANCHES = [
-  { alias: 'Ug1', table: 'dbo.Ug1', paperCol: '[PAPER ID]' },
-  { alias: 'PG1', table: 'dbo.PG1', paperCol: '[PAPER ID]' },
-  { alias: 'UG3', table: 'dbo.UG3', paperCol: '[PAPER ID]' },
-  { alias: 'UG5', table: 'dbo.UG5', paperCol: '[PAPER ID]' },
-  { alias: 'Pg5', table: 'dbo.Pg5', paperCol: '[PAPER ID]' },
-];
+const SCHEDULE_TABLES = ['dbo.Ug1', 'dbo.PG1', 'dbo.UG3', 'dbo.UG5', 'dbo.Pg5'];
 
 const formatDate = (value) => {
   if (!value) return null;
-  // Already YYYY-MM-DD from SQL CONVERT / ISO string — avoid TZ day-shift.
   if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}/.test(value)) {
     return value.slice(0, 10);
   }
   const d = value instanceof Date ? value : new Date(value);
   if (Number.isNaN(d.getTime())) return null;
-  // mssql DATE often arrives as UTC midnight; use UTC parts so the calendar day stays correct.
   const y = d.getUTCFullYear();
   const m = String(d.getUTCMonth() + 1).padStart(2, '0');
   const day = String(d.getUTCDate()).padStart(2, '0');
   return `${y}-${m}-${day}`;
 };
 
+/** Parse SP Date column like "20-Nov-2026" → YYYY-MM-DD. */
+const parseSpDate = (value) => {
+  if (!value) return null;
+  if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}/.test(value)) return value.slice(0, 10);
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return null;
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+};
+
 const parseMeeting = (meeting) => {
   const text = String(meeting || '').trim();
-  // e.g. "II Meeting 11:00AM - 01:00PM"
   const m = text.match(/^(I{1,3}|IV|V|\d+)\s+Meeting\s*(.*)$/i);
   if (!m) {
     return { shift: text || 'Meeting', meetingName: text, time: '' };
@@ -52,88 +55,83 @@ const shiftOrder = (name) => {
   return 9;
 };
 
-const scheduleDateUnionSql = () =>
-  SCHEDULE_BRANCHES.map(
-    ({ table }) => `SELECT CAST(ExamDate AS date) AS examDate FROM ${table} WHERE ExamDate IS NOT NULL`
-  ).join('\nUNION\n');
+/**
+ * Exact body of dbo.ExamEnquiryDetails, with the SP's "today IST" expression
+ * replaced by @examDate so historical dates can use the same logic.
+ */
+const examEnquiryDetailsSql = `
+Select Date,sum(totalstudent) as totalstudent,Meeting,sum(MaleAbsent) as MaleAbsent,sum(FemaleAbsent) FemaleAbsent,sum(TotalFemale) TotalFemale,sum(TotalMale) TotalMale from (select format(ug1.ExamDate,'dd-MMM-yyyy') as Date,COUNT(*) as 'totalstudent',(select MeetingName +' Meeting '+Timing from MeetingMaster where MeetingId= Ug1.MeetingId) as Meeting,
+sum(case when ExamAttendance.Present=0 and s.Gender='Male' then  1 else 0 end) MaleAbsent,
+sum(case when ExamAttendance.Present=0 and s.Gender='FeMale' then  1 else 0 end) FemaleAbsent,
+sum(case when s.Gender='FeMale' then  1 else 0 end) TotalFemale,
+sum(case when s.Gender='Male' then  1 else 0 end) TotalMale
+FROM  dbo.Student_Data s WITH (NOLOCK)
+INNER JOIN EVEN_SEM_PAPERS EP WITH (NOLOCK) ON RegistrationNo = ExamFormNo
+INNER JOIN dbo.PaperMaster p WITH (NOLOCK) ON p.PK_PaperID = EP.FK_PaperID
+inner Join Ug1 on Ug1.[PAPER ID]=p.PaperCode
+left outer join ExamAttendance WITH (NOLOCK) on ExamAttendance.Studentid=s.StudentId and ExamAttendance.Rollno=s.RollNo and paperid=p.PK_PaperID  and cast(CreatedAt as date)=cast(ug1.ExamDate as date)
+WHERE   cast(Ug1.ExamDate as date)=@examDate and s.Semester in(1,3,5,7)  and S.SessionId=4
+group by format(Ug1.ExamDate,'dd-MMM-yyyy'),Ug1.MeetingId
 
-/** One branch of ExamEnquiryDetails (parameterized date instead of "today IST"). */
-const enquiryBranchSql = ({ alias, table, paperCol }) => `
-  SELECT
-    FORMAT(${alias}.ExamDate, 'dd-MMM-yyyy') AS [Date],
-    COUNT(*) AS totalstudent,
-    (SELECT MeetingName + ' Meeting ' + Timing FROM dbo.MeetingMaster WHERE MeetingId = ${alias}.MeetingId) AS Meeting,
-    SUM(CASE WHEN ExamAttendance.Present = 0 AND s.Gender = 'Male' THEN 1 ELSE 0 END) AS MaleAbsent,
-    SUM(CASE WHEN ExamAttendance.Present = 0 AND s.Gender = 'FeMale' THEN 1 ELSE 0 END) AS FemaleAbsent,
-    SUM(CASE WHEN s.Gender = 'FeMale' THEN 1 ELSE 0 END) AS TotalFemale,
-    SUM(CASE WHEN s.Gender = 'Male' THEN 1 ELSE 0 END) AS TotalMale
-  FROM dbo.Student_Data s WITH (NOLOCK)
-  INNER JOIN dbo.EVEN_SEM_PAPERS EP WITH (NOLOCK) ON s.RegistrationNo = EP.ExamFormNo
-  INNER JOIN dbo.PaperMaster p WITH (NOLOCK) ON p.PK_PaperID = EP.FK_PaperID
-  INNER JOIN ${table} ${alias} ON ${alias}.${paperCol} = p.PaperCode
-  LEFT OUTER JOIN dbo.ExamAttendance WITH (NOLOCK)
-    ON ExamAttendance.Studentid = s.StudentId
-   AND ExamAttendance.Rollno = s.RollNo
-   AND ExamAttendance.paperid = p.PK_PaperID
-   AND CAST(ExamAttendance.CreatedAt AS date) = CAST(${alias}.ExamDate AS date)
-  WHERE CAST(${alias}.ExamDate AS date) = @examDate
-    AND s.Semester IN (1, 3, 5, 7)
-    AND s.SessionId = 4
-  GROUP BY FORMAT(${alias}.ExamDate, 'dd-MMM-yyyy'), ${alias}.MeetingId
+union all
+select format(PG1.ExamDate,'dd-MMM-yyyy') as Date,COUNT(*) as 'totalstudent',(select MeetingName +' Meeting '+Timing from MeetingMaster where MeetingId= PG1.MeetingId) as Meeting,
+sum(case when ExamAttendance.Present=0 and s.Gender='Male' then  1 else 0 end) MaleAbsent,
+sum(case when ExamAttendance.Present=0 and s.Gender='FeMale' then  1 else 0 end) FemaleAbsent,
+sum(case when s.Gender='FeMale' then  1 else 0 end) TotalFemale,
+sum(case when s.Gender='Male' then  1 else 0 end) TotalMale
+FROM  dbo.Student_Data s WITH (NOLOCK)
+INNER JOIN EVEN_SEM_PAPERS EP WITH (NOLOCK) ON RegistrationNo = ExamFormNo
+INNER JOIN dbo.PaperMaster p WITH (NOLOCK) ON p.PK_PaperID = EP.FK_PaperID
+inner Join PG1 on PG1.[PAPER ID]=p.PaperCode
+left outer join ExamAttendance WITH (NOLOCK) on ExamAttendance.Studentid=s.StudentId and ExamAttendance.Rollno=s.RollNo and paperid=p.PK_PaperID  and cast(CreatedAt as date)=cast(PG1.ExamDate as date)
+WHERE   cast(PG1.ExamDate as date)=@examDate and s.Semester in (1,3,5,7)  and S.SessionId=4
+group by format(PG1.ExamDate,'dd-MMM-yyyy'),PG1.MeetingId
+
+union all
+select format(UG3.ExamDate,'dd-MMM-yyyy') as Date,COUNT(*) as 'totalstudent',(select MeetingName +' Meeting '+ Timing from MeetingMaster where MeetingId= UG3.MeetingId) as Meeting,
+sum(case when ExamAttendance.Present=0 and s.Gender='Male' then  1 else 0 end) MaleAbsent,
+sum(case when ExamAttendance.Present=0 and s.Gender='FeMale' then  1 else 0 end) FemaleAbsent,
+sum(case when s.Gender='FeMale' then  1 else 0 end) TotalFemale,
+sum(case when s.Gender='Male' then  1 else 0 end) TotalMale
+FROM  dbo.Student_Data s WITH (NOLOCK)
+INNER JOIN EVEN_SEM_PAPERS EP WITH (NOLOCK) ON RegistrationNo = ExamFormNo
+INNER JOIN dbo.PaperMaster p WITH (NOLOCK) ON p.PK_PaperID = EP.FK_PaperID
+inner Join UG3 on UG3.[PAPER ID]=p.PaperCode
+left outer join ExamAttendance WITH (NOLOCK) on ExamAttendance.Studentid=s.StudentId and ExamAttendance.Rollno=s.RollNo and paperid=p.PK_PaperID  and cast(CreatedAt as date)=cast(UG3.ExamDate as date)
+WHERE     cast(UG3.ExamDate as date)=@examDate and s.Semester in (1,3,5,7)  and S.SessionId=4
+group by format(UG3.ExamDate,'dd-MMM-yyyy'),UG3.MeetingId
+
+union all
+select format(UG5.ExamDate,'dd-MMM-yyyy') as Date,COUNT(*) as 'totalstudent',(select MeetingName +' Meeting '+Timing from MeetingMaster where MeetingId= UG5.MeetingId) as Meeting,
+sum(case when ExamAttendance.Present=0 and s.Gender='Male' then  1 else 0 end) MaleAbsent,
+sum(case when ExamAttendance.Present=0 and s.Gender='FeMale' then  1 else 0 end) FemaleAbsent,
+sum(case when s.Gender='FeMale' then  1 else 0 end) TotalFemale,
+sum(case when s.Gender='Male' then  1 else 0 end) TotalMale
+FROM  dbo.Student_Data s WITH (NOLOCK)
+INNER JOIN EVEN_SEM_PAPERS EP WITH (NOLOCK) ON RegistrationNo = ExamFormNo
+INNER JOIN dbo.PaperMaster p WITH (NOLOCK) ON p.PK_PaperID = EP.FK_PaperID
+inner Join UG5 on UG5.[PAPER ID]=p.PaperCode
+left outer join ExamAttendance WITH (NOLOCK) on ExamAttendance.Studentid=s.StudentId and ExamAttendance.Rollno=s.RollNo and paperid=p.PK_PaperID  and cast(CreatedAt as date)=cast(UG5.ExamDate as date)
+WHERE   cast(UG5.ExamDate as date)=@examDate and s.Semester in (1,3,5,7) and S.SessionId=4
+group by format(UG5.ExamDate,'dd-MMM-yyyy'),UG5.MeetingId
+
+union all
+select format(Pg5.ExamDate,'dd-MMM-yyyy') as Date,COUNT(*) as 'totalstudent',(select MeetingName +' Meeting '+Timing from MeetingMaster where MeetingId= Pg5.MeetingId) as Meeting,
+sum(case when ExamAttendance.Present=0 and s.Gender='Male' then  1 else 0 end) MaleAbsent,
+sum(case when ExamAttendance.Present=0 and s.Gender='FeMale' then  1 else 0 end) FemaleAbsent,
+sum(case when s.Gender='FeMale' then  1 else 0 end) TotalFemale,
+sum(case when s.Gender='Male' then  1 else 0 end) TotalMale
+FROM  dbo.Student_Data s WITH (NOLOCK)
+INNER JOIN EVEN_SEM_PAPERS EP WITH (NOLOCK) ON RegistrationNo = ExamFormNo
+INNER JOIN dbo.PaperMaster p WITH (NOLOCK) ON p.PK_PaperID = EP.FK_PaperID
+inner Join Pg5 on Pg5.[PAPER ID]=p.PaperCode
+left outer join ExamAttendance WITH (NOLOCK) on ExamAttendance.Studentid=s.StudentId and ExamAttendance.Rollno=s.RollNo and paperid=p.PK_PaperID  and cast(CreatedAt as date)=cast(Pg5.ExamDate as date)
+WHERE   cast(Pg5.ExamDate as date)=@examDate and s.Semester in (1,3,5,7) and S.SessionId=4
+group by format(Pg5.ExamDate,'dd-MMM-yyyy'),Pg5.MeetingId) as t(Date,totalstudent,Meeting,MaleAbsent,FemaleAbsent,TotalFemale,TotalMale) group by Date,Meeting ORDER bY Meeting
 `;
 
-const enquiryUnionSql = () => SCHEDULE_BRANCHES.map(enquiryBranchSql).join('\nUNION ALL\n');
-
-const getDates = async () => {
-  const pool = await getPool();
-  const result = await pool.request().query(`
-    SELECT DISTINCT CONVERT(varchar(10), examDate, 23) AS examDate
-    FROM (
-      ${scheduleDateUnionSql()}
-    ) d
-    ORDER BY examDate ASC
-  `);
-  const dates = result.recordset
-    .map((r) => formatDate(r.examDate))
-    .filter(Boolean);
-  // Chronological order (oldest → newest); de-dupe after formatting.
-  return { dates: [...new Set(dates)].sort() };
-};
-
-const getReport = async (date) => {
-  const day = String(date || '').trim();
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) {
-    const err = new Error('Invalid date');
-    err.status = 400;
-    throw err;
-  }
-
-  const pool = await getPool();
-  const request = pool.request();
-  request.input('examDate', sql.Date, day);
-
-  const [rowsResult, sessionResult] = await Promise.all([
-    request.query(`
-      SELECT
-        [Date],
-        SUM(totalstudent) AS totalstudent,
-        Meeting,
-        SUM(MaleAbsent) AS MaleAbsent,
-        SUM(FemaleAbsent) AS FemaleAbsent,
-        SUM(TotalFemale) AS TotalFemale,
-        SUM(TotalMale) AS TotalMale
-      FROM (
-        ${enquiryUnionSql()}
-      ) AS t([Date], totalstudent, Meeting, MaleAbsent, FemaleAbsent, TotalFemale, TotalMale)
-      GROUP BY [Date], Meeting
-      ORDER BY Meeting
-    `),
-    pool.request().query(`
-      SELECT TOP 1 Session AS session FROM dbo.M_Session WHERE SessionId = 4
-    `),
-  ]);
-
-  const rows = rowsResult.recordset
+const mapRows = (recordset) =>
+  (recordset || [])
     .map((r) => {
       const parsed = parseMeeting(r.Meeting);
       const male = Number(r.TotalMale) || 0;
@@ -165,24 +163,79 @@ const getReport = async (date) => {
     .sort((a, b) => a._order - b._order)
     .map(({ _order, ...row }) => row);
 
+const buildReport = (day, rows, session) => {
   const sum = (key) => rows.reduce((n, r) => n + (Number(r[key]) || 0), 0);
-  const totals = {
-    male: sum('male'),
-    female: sum('female'),
-    total: sum('total'),
-    absentMale: sum('absentMale'),
-    absentFemale: sum('absentFemale'),
-    absentTotal: sum('absentTotal'),
-  };
-
   return {
     date: day,
-    session: sessionResult.recordset[0]?.session ?? '2027',
+    session: session ?? '2027',
     university: 'Veer Bahadur Singh Purvanchal University, Jaunpur',
     titleHi: 'उत्तर प्रदेश राज्य विश्वविद्यालय की परीक्षा के अनुश्रवण हेतु प्रपत्र',
+    source: 'ExamEnquiryDetails',
     rows,
-    totals,
+    totals: {
+      male: sum('male'),
+      female: sum('female'),
+      total: sum('total'),
+      absentMale: sum('absentMale'),
+      absentFemale: sum('absentFemale'),
+      absentTotal: sum('absentTotal'),
+    },
   };
+};
+
+const getTodayIst = async (pool) => {
+  const result = await pool.request().query(`
+    SELECT CONVERT(varchar(10), CAST(DATEADD(MINUTE, 330, GETUTCDATE()) AS date), 23) AS todayIst
+  `);
+  return formatDate(result.recordset[0]?.todayIst);
+};
+
+const getDates = async () => {
+  const pool = await getPool();
+  const union = SCHEDULE_TABLES.map(
+    (table) => `SELECT CAST(ExamDate AS date) AS examDate FROM ${table} WHERE ExamDate IS NOT NULL`
+  ).join('\nUNION\n');
+  const result = await pool.request().query(`
+    SELECT DISTINCT CONVERT(varchar(10), examDate, 23) AS examDate
+    FROM (
+      ${union}
+    ) d
+    ORDER BY examDate ASC
+  `);
+  const dates = result.recordset.map((r) => formatDate(r.examDate)).filter(Boolean);
+  return { dates: [...new Set(dates)].sort() };
+};
+
+const getReport = async (date) => {
+  const day = String(date || '').trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) {
+    const err = new Error('Invalid date');
+    err.status = 400;
+    throw err;
+  }
+
+  const pool = await getPool();
+  const todayIst = await getTodayIst(pool);
+
+  const [rowsResult, sessionResult] = await Promise.all([
+    (async () => {
+      // Today → execute the real procedure (same as portal).
+      if (day === todayIst) {
+        return pool.request().input('CenterLoginId', sql.VarChar(50), '').execute('ExamEnquiryDetails');
+      }
+      // Other dates → same SP SQL with @examDate.
+      return pool.request().input('examDate', sql.Date, day).query(examEnquiryDetailsSql);
+    })(),
+    pool.request().query(`
+      SELECT TOP 1 Session AS session FROM dbo.M_Session WHERE SessionId = 4
+    `),
+  ]);
+
+  const recordset = rowsResult.recordset || [];
+  const rows = mapRows(recordset);
+  const reportDate = parseSpDate(recordset[0]?.Date) || day;
+
+  return buildReport(reportDate, rows, sessionResult.recordset[0]?.session);
 };
 
 module.exports = { getDates, getReport };
