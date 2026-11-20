@@ -88,18 +88,47 @@ export class ExamSupervisionComponent implements OnInit {
   protected downloadPdf(): void {
     const report = this.report();
     if (!report) {
+      this.error.set('Load a report first, then download PDF.');
       return;
     }
-    const w = window.open('', '_blank', 'noopener,noreferrer,width=900,height=700');
-    if (!w) {
-      this.error.set('Pop-up blocked. Allow pop-ups to download the PDF.');
+    this.error.set('');
+    const html = buildPrintHtml(report);
+
+    // Hidden iframe avoids popup-blocker / noopener issues with window.open.
+    const iframe = document.createElement('iframe');
+    iframe.setAttribute('aria-hidden', 'true');
+    iframe.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;';
+    document.body.appendChild(iframe);
+
+    const win = iframe.contentWindow;
+    const doc = win?.document;
+    if (!win || !doc) {
+      iframe.remove();
+      this.error.set('Could not open print view for PDF.');
       return;
     }
-    w.document.open();
-    w.document.write(buildPrintHtml(report));
-    w.document.close();
-    w.focus();
-    setTimeout(() => w.print(), 300);
+
+    doc.open();
+    doc.write(html);
+    doc.close();
+
+    const cleanup = () => {
+      setTimeout(() => iframe.remove(), 500);
+    };
+    win.addEventListener('afterprint', cleanup, { once: true });
+
+    // Let the document paint, then open the system print dialog (Save as PDF).
+    setTimeout(() => {
+      try {
+        win.focus();
+        win.print();
+      } catch {
+        this.error.set('Print dialog failed. Try again or allow printing in the browser.');
+      } finally {
+        // Fallback cleanup if afterprint never fires (some browsers).
+        setTimeout(cleanup, 2000);
+      }
+    }, 300);
   }
 
   private loadReport(date: string): void {
