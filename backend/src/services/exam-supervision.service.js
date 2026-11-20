@@ -16,11 +16,16 @@ const SCHEDULE_BRANCHES = [
 
 const formatDate = (value) => {
   if (!value) return null;
+  // Already YYYY-MM-DD from SQL CONVERT / ISO string — avoid TZ day-shift.
+  if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}/.test(value)) {
+    return value.slice(0, 10);
+  }
   const d = value instanceof Date ? value : new Date(value);
   if (Number.isNaN(d.getTime())) return null;
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
+  // mssql DATE often arrives as UTC midnight; use UTC parts so the calendar day stays correct.
+  const y = d.getUTCFullYear();
+  const m = String(d.getUTCMonth() + 1).padStart(2, '0');
+  const day = String(d.getUTCDate()).padStart(2, '0');
   return `${y}-${m}-${day}`;
 };
 
@@ -82,15 +87,17 @@ const enquiryUnionSql = () => SCHEDULE_BRANCHES.map(enquiryBranchSql).join('\nUN
 const getDates = async () => {
   const pool = await getPool();
   const result = await pool.request().query(`
-    SELECT DISTINCT examDate
+    SELECT DISTINCT CONVERT(varchar(10), examDate, 23) AS examDate
     FROM (
       ${scheduleDateUnionSql()}
     ) d
-    ORDER BY examDate DESC
+    ORDER BY examDate ASC
   `);
-  return {
-    dates: result.recordset.map((r) => formatDate(r.examDate)).filter(Boolean),
-  };
+  const dates = result.recordset
+    .map((r) => formatDate(r.examDate))
+    .filter(Boolean);
+  // Chronological order (oldest → newest); de-dupe after formatting.
+  return { dates: [...new Set(dates)].sort() };
 };
 
 const getReport = async (date) => {

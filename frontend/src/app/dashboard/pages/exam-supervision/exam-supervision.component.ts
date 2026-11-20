@@ -56,15 +56,16 @@ export class ExamSupervisionComponent implements OnInit {
   ngOnInit(): void {
     this.http.get<{ dates: string[] }>(`${environment.apiUrl}/dashboard/exam-supervision/dates`).subscribe({
       next: (res) => {
-        const list = res.dates ?? [];
+        const list = [...(res.dates ?? [])].sort();
         this.dates.set(list);
         this.loadingDates.set(false);
         if (!list.length) {
           return;
         }
-        // Prefer today's exam date (local calendar day); else first available.
+        // Prefer today's exam date (local calendar day); else nearest upcoming, else last.
         const today = localIsoDate();
-        const initial = list.includes(today) ? today : list[0];
+        const upcoming = list.find((d) => d >= today);
+        const initial = list.includes(today) ? today : upcoming ?? list[list.length - 1];
         this.selectedDate.set(initial);
         this.loadReport(initial);
       },
