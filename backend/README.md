@@ -44,6 +44,8 @@ src/
 | GET    | `/api/dashboard/exam-evaluators` | Exam evaluator list via `Proc_ExamEvaluatorList` (`status`, `uniqueId`, `name`, `contactNo`, `adharNo`, `subject`) |
 | GET    | `/api/dashboard/exam-evaluators/subjects` | Distinct subjects for evaluator filter dropdown |
 | GET    | `/api/dashboard/exam-evaluators/:uniqueId/print` | Teacher Registration print detail (photo/sign/aadhar URLs) |
+| GET    | `/api/dashboard/exam-schedule/dates` | Distinct exam dates from Ug1/UG3/UG5/PG1/Pg5 |
+| GET    | `/api/dashboard/exam-schedule?date=&level=` | Exam schedule (`level`: `all` \| `ug` \| `pg`) |
 
 ## Login
 

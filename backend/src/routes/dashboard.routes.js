@@ -14,5 +14,7 @@ router.get('/exam-supervision', dashboardController.getExamSupervision);
 router.get('/exam-evaluators/subjects', dashboardController.getExamEvaluatorSubjects);
 router.get('/exam-evaluators/:uniqueId/print', dashboardController.getExamEvaluatorPrint);
 router.get('/exam-evaluators', dashboardController.getExamEvaluators);
+router.get('/exam-schedule/dates', dashboardController.getExamScheduleDates);
+router.get('/exam-schedule', dashboardController.getExamSchedule);
 
 module.exports = router;

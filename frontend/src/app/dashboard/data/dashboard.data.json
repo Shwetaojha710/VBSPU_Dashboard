@@ -75,6 +75,11 @@
       "icon": "clipboard-list"
     },
     {
+      "label": "Exam Schedule",
+      "path": "exam-schedule",
+      "icon": "clipboard-list"
+    },
+    {
       "label": "AI Teaching & Faculty",
       "path": "ai-teaching-faculty",
       "icon": "brain",

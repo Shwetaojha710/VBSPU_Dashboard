@@ -5,6 +5,7 @@ const enrollmentByTypeService = require('../services/enrollment-by-type.service'
 const courseStatusService = require('../services/course-status.service');
 const examSupervisionService = require('../services/exam-supervision.service');
 const examEvaluatorService = require('../services/exam-evaluator.service');
+const examScheduleService = require('../services/exam-schedule.service');
 const ApiError = require('../utils/ApiError');
 
 const getSummary = async (req, res, next) => {
@@ -127,6 +128,32 @@ const getExamEvaluatorPrint = async (req, res, next) => {
   }
 };
 
+const getExamScheduleDates = async (req, res, next) => {
+  try {
+    res.status(200).json(await examScheduleService.getDates());
+  } catch (err) {
+    console.error('Exam schedule dates failed:', err.message);
+    next(new ApiError(503, 'Dashboard data is temporarily unavailable'));
+  }
+};
+
+const getExamSchedule = async (req, res, next) => {
+  try {
+    res.status(200).json(
+      await examScheduleService.getSchedule({
+        date: req.query.date,
+        level: req.query.level,
+      })
+    );
+  } catch (err) {
+    if (err.status === 400) {
+      return next(new ApiError(400, err.message));
+    }
+    console.error('Exam schedule failed:', err.message);
+    next(new ApiError(503, 'Dashboard data is temporarily unavailable'));
+  }
+};
+
 module.exports = {
   getSummary,
   getDetail,
@@ -139,4 +166,6 @@ module.exports = {
   getExamEvaluatorSubjects,
   getExamEvaluators,
   getExamEvaluatorPrint,
+  getExamScheduleDates,
+  getExamSchedule,
 };

@@ -1,0 +1,94 @@
+<section class="page" aria-label="Exam schedule">
+  <a class="page__link" routerLink="/">← Back to Overview</a>
+
+  <header class="page__header">
+    <div>
+      <h1 class="page__title">Exam Schedule</h1>
+      <p class="page__text">
+        Papers from Ug1, UG3, UG5, PG1 and Pg5 (UNION ALL). Filter by exam date and UG / PG.
+      </p>
+    </div>
+    <div class="toolbar">
+      <label class="field">
+        <span class="field__label">Exam date</span>
+        <select
+          class="field__control"
+          [ngModel]="selectedDate()"
+          (ngModelChange)="onDateChange($event)"
+          [disabled]="loadingDates() || !dates().length"
+        >
+          @if (!dates().length) {
+            <option value="">No exam dates found</option>
+          }
+          @for (d of dates(); track d) {
+            <option [value]="d">{{ d }}</option>
+          }
+        </select>
+      </label>
+      <label class="field">
+        <span class="field__label">UG / PG</span>
+        <select
+          class="field__control"
+          [ngModel]="level()"
+          (ngModelChange)="onLevelChange($event)"
+          [disabled]="loading() || !selectedDate()"
+        >
+          <option value="all">All</option>
+          <option value="ug">UG</option>
+          <option value="pg">PG</option>
+        </select>
+      </label>
+    </div>
+  </header>
+
+  <div class="summary">
+    <span>Total: {{ totalRecord() }}</span>
+    <span>UG: {{ ugCount() }}</span>
+    <span>PG: {{ pgCount() }}</span>
+  </div>
+
+  @if (error()) {
+    <p class="page__error" role="alert">{{ error() }}</p>
+  }
+
+  @if (loading() || loadingDates()) {
+    <p class="page__text">Loading schedule…</p>
+  } @else {
+    <div class="table-wrap">
+      <table class="grid">
+        <thead>
+          <tr>
+            <th>S.No.</th>
+            <th>Level</th>
+            <th>Source</th>
+            <th>Course</th>
+            <th>Subject</th>
+            <th>Paper ID</th>
+            <th>Paper Name</th>
+            <th>Meeting / Time</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (row of rows(); track row.sNo + '-' + (row.paperId || '') + '-' + row.source) {
+            <tr>
+              <td>{{ row.sNo }}</td>
+              <td>
+                <span class="badge" [attr.data-level]="row.level">{{ row.level }}</span>
+              </td>
+              <td>{{ row.source }}</td>
+              <td>{{ row.course || '—' }}</td>
+              <td>{{ row.subject || '—' }}</td>
+              <td>{{ row.paperId || '—' }}</td>
+              <td>{{ row.paperName || '—' }}</td>
+              <td>{{ row.meeting || row.timing || '—' }}</td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="8" class="empty">No papers scheduled for this date / filter.</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</section>
