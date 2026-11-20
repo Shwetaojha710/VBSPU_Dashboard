@@ -3,6 +3,7 @@ const detailsService = require('../services/dashboard-details.service');
 const examStatusService = require('../services/exam-status.service');
 const enrollmentByTypeService = require('../services/enrollment-by-type.service');
 const courseStatusService = require('../services/course-status.service');
+const examSupervisionService = require('../services/exam-supervision.service');
 const ApiError = require('../utils/ApiError');
 
 const getSummary = async (req, res, next) => {
@@ -64,4 +65,34 @@ const getCollegeCourses = async (req, res, next) => {
   }
 };
 
-module.exports = { getSummary, getDetail, getExamStatus, getEnrollmentByType, getCourseSummary, getCollegeCourses };
+const getExamSupervisionDates = async (req, res, next) => {
+  try {
+    res.status(200).json(await examSupervisionService.getDates());
+  } catch (err) {
+    console.error('Exam supervision dates failed:', err.message);
+    next(new ApiError(503, 'Dashboard data is temporarily unavailable'));
+  }
+};
+
+const getExamSupervision = async (req, res, next) => {
+  try {
+    res.status(200).json(await examSupervisionService.getReport(req.query.date));
+  } catch (err) {
+    if (err.status === 400) {
+      return next(new ApiError(400, 'Valid date query required (YYYY-MM-DD)'));
+    }
+    console.error('Exam supervision report failed:', err.message);
+    next(new ApiError(503, 'Dashboard data is temporarily unavailable'));
+  }
+};
+
+module.exports = {
+  getSummary,
+  getDetail,
+  getExamStatus,
+  getEnrollmentByType,
+  getCourseSummary,
+  getCollegeCourses,
+  getExamSupervisionDates,
+  getExamSupervision,
+};

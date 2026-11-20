@@ -3,6 +3,7 @@ import { authGuard, guestGuard } from './auth/auth.guard';
 import { LoginComponent } from './auth/login/login.component';
 import { DashboardComponent } from './dashboard/dashboard.component';
 import { ExamStatusComponent } from './dashboard/pages/exam-status/exam-status.component';
+import { ExamSupervisionComponent } from './dashboard/pages/exam-supervision/exam-supervision.component';
 import { OverviewComponent } from './dashboard/pages/overview/overview.component';
 import { SectionComponent } from './dashboard/pages/section/section.component';
 
@@ -15,6 +16,11 @@ export const routes: Routes = [
     children: [
       { path: '', component: OverviewComponent, title: 'VBSPU VC Dashboard' },
       { path: 'exam-status', component: ExamStatusComponent, title: 'Exam Status – VBSPU Dashboard' },
+      {
+        path: 'exam-supervision',
+        component: ExamSupervisionComponent,
+        title: 'Exam Supervision – VBSPU Dashboard'
+      },
       { path: ':section', component: SectionComponent, title: 'VBSPU VC Dashboard' }
     ]
   },

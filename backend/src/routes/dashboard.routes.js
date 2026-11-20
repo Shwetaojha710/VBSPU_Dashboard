@@ -9,5 +9,7 @@ router.get('/exam-status', dashboardController.getExamStatus);
 router.get('/enrollment-by-type', dashboardController.getEnrollmentByType);
 router.get('/course-status', dashboardController.getCourseSummary);
 router.get('/course-status/:code', dashboardController.getCollegeCourses);
+router.get('/exam-supervision/dates', dashboardController.getExamSupervisionDates);
+router.get('/exam-supervision', dashboardController.getExamSupervision);
 
 module.exports = router;

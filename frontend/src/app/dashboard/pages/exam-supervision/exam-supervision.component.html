@@ -1,0 +1,105 @@
+<section class="page" aria-label="Exam supervision report">
+  <a class="page__link" routerLink="/" fragment="exam-status">← Back to Overview</a>
+
+  <header class="page__header">
+    <div>
+      <h1 class="page__title">Exam Supervision Report</h1>
+      <p class="page__text">
+        Select an exam date to view the अनुश्रवण प्रपत्र (by पाली). Download opens a print-ready PDF view.
+      </p>
+    </div>
+    <div class="toolbar">
+      <label class="field">
+        <span class="field__label">Exam date</span>
+        <select
+          class="field__control"
+          [ngModel]="selectedDate()"
+          (ngModelChange)="onDateChange($event)"
+          [disabled]="loadingDates() || !dates().length"
+        >
+          @if (!dates().length) {
+            <option value="">No exam dates found</option>
+          }
+          @for (d of dates(); track d) {
+            <option [value]="d">{{ d }}</option>
+          }
+        </select>
+      </label>
+      <button
+        type="button"
+        class="btn"
+        (click)="downloadPdf()"
+        [disabled]="!report() || loadingReport()"
+      >
+        Download PDF
+      </button>
+    </div>
+  </header>
+
+  @if (error()) {
+    <p class="page__error" role="alert">{{ error() }}</p>
+  }
+
+  @if (loadingReport()) {
+    <p class="page__text">Loading report…</p>
+  } @else {
+    @if (report(); as r) {
+      <div class="sheet">
+        <h2 class="sheet__uni">{{ r.university }}</h2>
+        <p class="sheet__title">{{ r.titleHi }}</p>
+        <p class="sheet__meta">
+          Date: <strong>{{ r.date }}</strong>
+          @if (r.session) {
+            · Session: <strong>{{ r.session }}</strong>
+          }
+        </p>
+
+        <div class="table-wrap">
+          <table class="sheet__table">
+            <thead>
+              <tr>
+                <th>पाली</th>
+                <th>समय</th>
+                <th>छात्र</th>
+                <th>छात्राएं</th>
+                <th>कुल</th>
+                <th>अनुपस्थित छात्र</th>
+                <th>अनुपस्थित छात्राएं</th>
+                <th>अनुपस्थित कुल</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (row of r.rows; track row.shift) {
+                <tr>
+                  <td>{{ row.shift }}</td>
+                  <td>{{ row.time }}</td>
+                  <td>{{ row.male }}</td>
+                  <td>{{ row.female }}</td>
+                  <td>{{ row.total }}</td>
+                  <td>{{ row.absentMale }}</td>
+                  <td>{{ row.absentFemale }}</td>
+                  <td>{{ row.absentTotal }}</td>
+                </tr>
+              }
+            </tbody>
+            <tfoot>
+              <tr>
+                <td colspan="2">योग</td>
+                <td>{{ r.totals.male }}</td>
+                <td>{{ r.totals.female }}</td>
+                <td>{{ r.totals.total }}</td>
+                <td>{{ r.totals.absentMale }}</td>
+                <td>{{ r.totals.absentFemale }}</td>
+                <td>{{ r.totals.absentTotal }}</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+
+        @if (!r.rows.length) {
+          <p class="page__text">No attendance matched the schedule for this date.</p>
+        }
+      </div>
+    }
+  }
+</section>

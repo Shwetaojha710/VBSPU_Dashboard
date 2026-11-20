@@ -23,6 +23,16 @@
   scroll-margin-top: calc(var(--header-height) + 14px);
 }
 
+.exam-status__link {
+  margin: 8px 0 0;
+  font-size: 14px;
+
+  a {
+    color: var(--color-link);
+    text-decoration: none;
+  }
+}
+
 /* Screen 2 */
 .s2-top {
   display: grid;

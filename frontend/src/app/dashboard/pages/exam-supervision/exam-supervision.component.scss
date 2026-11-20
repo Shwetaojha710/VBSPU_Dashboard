@@ -1,0 +1,137 @@
+:host {
+  display: block;
+}
+
+.page {
+  padding: 24px;
+  border: 1px solid var(--color-border-panel);
+  border-radius: var(--radius-panel);
+  background: var(--color-surface);
+}
+
+.page__header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px 24px;
+  align-items: flex-end;
+  justify-content: space-between;
+  margin-bottom: 18px;
+}
+
+.page__title {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.page__text {
+  margin: 8px 0 0;
+  color: var(--color-text-secondary);
+  font-size: 15px;
+}
+
+.page__link {
+  display: inline-block;
+  margin-bottom: 14px;
+  color: var(--color-link);
+  font-size: 15px;
+  text-decoration: none;
+}
+
+.page__error {
+  color: #b42318;
+  font-size: 14px;
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: flex-end;
+}
+
+.field {
+  display: grid;
+  gap: 6px;
+}
+
+.field__label {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+}
+
+.field__control {
+  min-width: 180px;
+  padding: 8px 10px;
+  border: 1px solid var(--color-border-panel);
+  border-radius: 6px;
+  background: #fff;
+  font: inherit;
+}
+
+.btn {
+  padding: 9px 14px;
+  border: 0;
+  border-radius: 6px;
+  background: #1f4b7a;
+  color: #fff;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.sheet {
+  margin-top: 8px;
+}
+
+.sheet__uni {
+  margin: 0;
+  text-align: center;
+  font-size: 18px;
+}
+
+.sheet__title {
+  margin: 6px 0;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.sheet__meta {
+  text-align: center;
+  color: var(--color-text-secondary);
+  font-size: 14px;
+}
+
+.table-wrap {
+  overflow-x: auto;
+  margin-top: 16px;
+}
+
+.sheet__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.sheet__table th,
+.sheet__table td {
+  border: 1px solid var(--color-border-panel);
+  padding: 8px 10px;
+  text-align: center;
+}
+
+.sheet__table th {
+  background: #f5f7fa;
+  font-weight: 600;
+}
+
+.sheet__table tfoot td {
+  font-weight: 700;
+  background: #f8fafc;
+}

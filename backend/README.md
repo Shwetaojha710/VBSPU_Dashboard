@@ -39,6 +39,8 @@ src/
 | GET    | `/api/dashboard/enrollment-by-type` | UG and PG students per session, for the enrollment chart |
 | GET    | `/api/dashboard/course-status` | Online/pending course counts per college (second database, PU_2026) |
 | GET    | `/api/dashboard/course-status/:code` | Course-wise exam status for one college: students, theory, practical and internal marks, result |
+| GET    | `/api/dashboard/exam-supervision/dates` | Distinct exam dates from schedule tables (`Ug1`/`PG1`/`UG3`/`UG5`/`Pg5`) |
+| GET    | `/api/dashboard/exam-supervision?date=YYYY-MM-DD` | Date-wise अनुश्रवण प्रपत्र by पाली (same logic as `ExamEnquiryDetails`) |
 
 ## Login
 
