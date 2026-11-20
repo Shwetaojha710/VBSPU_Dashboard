@@ -59,8 +59,11 @@ const shiftOrder = (name) => {
  * Exact body of dbo.ExamEnquiryDetails, with the SP's "today IST" expression
  * replaced by @examDate so historical dates can use the same logic.
  */
+/** Non-blank gender only (matches Male + FeMale sums used for छात्र/छात्राएं). */
+const totalStudentExpr = `sum(case when nullif(ltrim(rtrim(s.Gender)),'') is not null then 1 else 0 end)`;
+
 const examEnquiryDetailsSql = `
-Select Date,sum(totalstudent) as totalstudent,Meeting,sum(MaleAbsent) as MaleAbsent,sum(FemaleAbsent) FemaleAbsent,sum(TotalFemale) TotalFemale,sum(TotalMale) TotalMale from (select format(ug1.ExamDate,'dd-MMM-yyyy') as Date,COUNT(*) as 'totalstudent',(select MeetingName +' Meeting '+Timing from MeetingMaster where MeetingId= Ug1.MeetingId) as Meeting,
+Select Date,sum(totalstudent) as totalstudent,Meeting,sum(MaleAbsent) as MaleAbsent,sum(FemaleAbsent) FemaleAbsent,sum(TotalFemale) TotalFemale,sum(TotalMale) TotalMale from (select format(ug1.ExamDate,'dd-MMM-yyyy') as Date,${totalStudentExpr} as 'totalstudent',(select MeetingName +' Meeting '+Timing from MeetingMaster where MeetingId= Ug1.MeetingId) as Meeting,
 sum(case when ExamAttendance.Present=0 and s.Gender='Male' then  1 else 0 end) MaleAbsent,
 sum(case when ExamAttendance.Present=0 and s.Gender='FeMale' then  1 else 0 end) FemaleAbsent,
 sum(case when s.Gender='FeMale' then  1 else 0 end) TotalFemale,
@@ -74,7 +77,7 @@ WHERE   cast(Ug1.ExamDate as date)=@examDate and s.Semester in(1,3,5,7)  and S.S
 group by format(Ug1.ExamDate,'dd-MMM-yyyy'),Ug1.MeetingId
 
 union all
-select format(PG1.ExamDate,'dd-MMM-yyyy') as Date,COUNT(*) as 'totalstudent',(select MeetingName +' Meeting '+Timing from MeetingMaster where MeetingId= PG1.MeetingId) as Meeting,
+select format(PG1.ExamDate,'dd-MMM-yyyy') as Date,${totalStudentExpr} as 'totalstudent',(select MeetingName +' Meeting '+Timing from MeetingMaster where MeetingId= PG1.MeetingId) as Meeting,
 sum(case when ExamAttendance.Present=0 and s.Gender='Male' then  1 else 0 end) MaleAbsent,
 sum(case when ExamAttendance.Present=0 and s.Gender='FeMale' then  1 else 0 end) FemaleAbsent,
 sum(case when s.Gender='FeMale' then  1 else 0 end) TotalFemale,
@@ -88,7 +91,7 @@ WHERE   cast(PG1.ExamDate as date)=@examDate and s.Semester in (1,3,5,7)  and S.
 group by format(PG1.ExamDate,'dd-MMM-yyyy'),PG1.MeetingId
 
 union all
-select format(UG3.ExamDate,'dd-MMM-yyyy') as Date,COUNT(*) as 'totalstudent',(select MeetingName +' Meeting '+ Timing from MeetingMaster where MeetingId= UG3.MeetingId) as Meeting,
+select format(UG3.ExamDate,'dd-MMM-yyyy') as Date,${totalStudentExpr} as 'totalstudent',(select MeetingName +' Meeting '+ Timing from MeetingMaster where MeetingId= UG3.MeetingId) as Meeting,
 sum(case when ExamAttendance.Present=0 and s.Gender='Male' then  1 else 0 end) MaleAbsent,
 sum(case when ExamAttendance.Present=0 and s.Gender='FeMale' then  1 else 0 end) FemaleAbsent,
 sum(case when s.Gender='FeMale' then  1 else 0 end) TotalFemale,
@@ -102,7 +105,7 @@ WHERE     cast(UG3.ExamDate as date)=@examDate and s.Semester in (1,3,5,7)  and 
 group by format(UG3.ExamDate,'dd-MMM-yyyy'),UG3.MeetingId
 
 union all
-select format(UG5.ExamDate,'dd-MMM-yyyy') as Date,COUNT(*) as 'totalstudent',(select MeetingName +' Meeting '+Timing from MeetingMaster where MeetingId= UG5.MeetingId) as Meeting,
+select format(UG5.ExamDate,'dd-MMM-yyyy') as Date,${totalStudentExpr} as 'totalstudent',(select MeetingName +' Meeting '+Timing from MeetingMaster where MeetingId= UG5.MeetingId) as Meeting,
 sum(case when ExamAttendance.Present=0 and s.Gender='Male' then  1 else 0 end) MaleAbsent,
 sum(case when ExamAttendance.Present=0 and s.Gender='FeMale' then  1 else 0 end) FemaleAbsent,
 sum(case when s.Gender='FeMale' then  1 else 0 end) TotalFemale,
@@ -116,7 +119,7 @@ WHERE   cast(UG5.ExamDate as date)=@examDate and s.Semester in (1,3,5,7) and S.S
 group by format(UG5.ExamDate,'dd-MMM-yyyy'),UG5.MeetingId
 
 union all
-select format(Pg5.ExamDate,'dd-MMM-yyyy') as Date,COUNT(*) as 'totalstudent',(select MeetingName +' Meeting '+Timing from MeetingMaster where MeetingId= Pg5.MeetingId) as Meeting,
+select format(Pg5.ExamDate,'dd-MMM-yyyy') as Date,${totalStudentExpr} as 'totalstudent',(select MeetingName +' Meeting '+Timing from MeetingMaster where MeetingId= Pg5.MeetingId) as Meeting,
 sum(case when ExamAttendance.Present=0 and s.Gender='Male' then  1 else 0 end) MaleAbsent,
 sum(case when ExamAttendance.Present=0 and s.Gender='FeMale' then  1 else 0 end) FemaleAbsent,
 sum(case when s.Gender='FeMale' then  1 else 0 end) TotalFemale,
@@ -136,7 +139,8 @@ const mapRows = (recordset) =>
       const parsed = parseMeeting(r.Meeting);
       const male = Number(r.TotalMale) || 0;
       const female = Number(r.TotalFemale) || 0;
-      const total = Number(r.totalstudent) || 0;
+      // Exclude blank/NULL gender — कुल = छात्र + छात्राएं (same as non-blank count).
+      const total = male + female;
       const absentMale = Number(r.MaleAbsent) || 0;
       const absentFemale = Number(r.FemaleAbsent) || 0;
       return {
