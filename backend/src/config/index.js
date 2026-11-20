@@ -23,6 +23,8 @@ module.exports = {
   },
   /** How long dashboard aggregates are reused before querying the database again. */
   dashboardCacheMs: Number(process.env.DASHBOARD_CACHE_SECONDS || 1800) * 1000,
+  /** Public origin for `~/Content/...` evaluator uploads (photo, sign, aadhar, …). */
+  evaluatorFileBaseUrl: (process.env.EVALUATOR_FILE_BASE_URL || 'https://vbspuresult.org.in').replace(/\/$/, ''),
   auth: {
     /** "email:scrypt:salt:hash" entries separated by commas (see `npm run add-user`). */
     users: parseUsers(process.env.AUTH_USERS),

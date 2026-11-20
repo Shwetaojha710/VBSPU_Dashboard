@@ -70,6 +70,11 @@
       "icon": "clipboard-list"
     },
     {
+      "label": "Exam Evaluators",
+      "path": "exam-evaluators",
+      "icon": "clipboard-list"
+    },
+    {
       "label": "AI Teaching & Faculty",
       "path": "ai-teaching-faculty",
       "icon": "brain",

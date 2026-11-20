@@ -4,6 +4,7 @@ import { LoginComponent } from './auth/login/login.component';
 import { DashboardComponent } from './dashboard/dashboard.component';
 import { ExamStatusComponent } from './dashboard/pages/exam-status/exam-status.component';
 import { ExamSupervisionComponent } from './dashboard/pages/exam-supervision/exam-supervision.component';
+import { ExamEvaluatorsComponent } from './dashboard/pages/exam-evaluators/exam-evaluators.component';
 import { OverviewComponent } from './dashboard/pages/overview/overview.component';
 import { SectionComponent } from './dashboard/pages/section/section.component';
 
@@ -20,6 +21,11 @@ export const routes: Routes = [
         path: 'exam-supervision',
         component: ExamSupervisionComponent,
         title: 'Exam Supervision – VBSPU Dashboard'
+      },
+      {
+        path: 'exam-evaluators',
+        component: ExamEvaluatorsComponent,
+        title: 'Exam Evaluator List – VBSPU Dashboard'
       },
       { path: ':section', component: SectionComponent, title: 'VBSPU VC Dashboard' }
     ]

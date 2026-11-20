@@ -1,0 +1,202 @@
+<section class="page" aria-label="Exam evaluator list">
+  <a class="page__link" routerLink="/">← Back to Overview</a>
+  <h1 class="page__title">Exam Evaluator List</h1>
+
+  <form class="filters" (ngSubmit)="search()">
+    <label class="field">
+      <span>Approved Or Declined</span>
+      <select name="status" [ngModel]="filters.status" (ngModelChange)="onStatusChange($event)">
+        <option value="pending">Pending</option>
+        <option value="approved">Approved</option>
+        <option value="declined">Declined</option>
+        <option value="all">All</option>
+      </select>
+    </label>
+    <label class="field">
+      <span>Unique Id</span>
+      <input type="text" name="uniqueId" [(ngModel)]="filters.uniqueId" placeholder="Unique Id" />
+    </label>
+    <label class="field">
+      <span>Name</span>
+      <input type="text" name="name" [(ngModel)]="filters.name" placeholder="Name" />
+    </label>
+    <label class="field">
+      <span>Contact No.</span>
+      <input type="text" name="contactNo" [(ngModel)]="filters.contactNo" placeholder="Contact No." />
+    </label>
+    <label class="field">
+      <span>Adhar No.</span>
+      <input type="text" name="adharNo" [(ngModel)]="filters.adharNo" placeholder="Adhar No." />
+    </label>
+    <div class="field field--combo">
+      <span>Subject</span>
+      <div class="combo" [class.combo--open]="subjectOpen()">
+        <input
+          #subjectInput
+          type="text"
+          name="subjectQuery"
+          role="combobox"
+          aria-autocomplete="list"
+          [attr.aria-expanded]="subjectOpen()"
+          aria-controls="subject-listbox"
+          [attr.aria-activedescendant]="subjectHighlight() >= 0 ? 'subject-opt-' + subjectHighlight() : null"
+          [ngModel]="subjectQuery()"
+          (ngModelChange)="onSubjectQueryInput($event)"
+          (focus)="openSubjectDropdown()"
+          (keydown)="onSubjectKeydown($event)"
+          placeholder="Search subject…"
+          autocomplete="off"
+        />
+        @if (subjectQuery()) {
+          <button type="button" class="combo__clear" (click)="clearSubject()" aria-label="Clear subject">×</button>
+        }
+        @if (subjectOpen()) {
+          <ul id="subject-listbox" class="combo__list" role="listbox">
+            <li
+              class="combo__option combo__option--muted"
+              role="option"
+              [class.combo__option--active]="subjectHighlight() === -1 && !filters.subject"
+              (mousedown)="selectSubject('')"
+            >
+              -- Select --
+            </li>
+            @for (s of filteredSubjects(); track s; let i = $index) {
+              <li
+                [id]="'subject-opt-' + i"
+                class="combo__option"
+                role="option"
+                [attr.aria-selected]="filters.subject === s"
+                [class.combo__option--active]="subjectHighlight() === i"
+                (mousedown)="selectSubject(s)"
+              >
+                {{ s }}
+              </li>
+            } @empty {
+              <li class="combo__option combo__option--muted">No subjects found</li>
+            }
+          </ul>
+        }
+      </div>
+      <input type="hidden" name="subject" [(ngModel)]="filters.subject" />
+    </div>
+    <div class="filters__actions">
+      <button type="submit" class="btn btn--search" [disabled]="loading()">Search</button>
+      <button type="button" class="btn btn--ghost" (click)="clearFilters()" [disabled]="loading()">Clear</button>
+    </div>
+  </form>
+
+  <div class="toolbar">
+    <button type="button" class="btn btn--excel" (click)="exportExcel()" [disabled]="!rows().length">
+      Export to Excel
+    </button>
+    <button type="button" class="btn btn--ghost" (click)="printAll()" [disabled]="!rows().length">
+      Print list
+    </button>
+    <span class="toolbar__count">Total: {{ totalRecord() }}</span>
+  </div>
+
+  @if (error()) {
+    <p class="page__error" role="alert">{{ error() }}</p>
+  }
+
+  @if (loading()) {
+    <p class="page__text">Loading evaluators…</p>
+  } @else {
+    <div class="table-wrap">
+      <table class="grid">
+        <thead>
+          <tr>
+            <th>S.No.</th>
+            <th>Unique Id</th>
+            <th>Name</th>
+            <th>Designation</th>
+            <th>Institute Name</th>
+            <th>Subject</th>
+            <th>Teaching Experience UG/PG</th>
+            <th>Specialization</th>
+            <th>Contact No./Alternate No.</th>
+            <th>EmailId</th>
+            <th>Pan No./Adhar No.</th>
+            <th>Aadhar File</th>
+            <th>Pan File</th>
+            <th>Photo File</th>
+            <th>Sign File</th>
+            <th>Appointment Letter</th>
+            <th>Experience Letter</th>
+            <th>Print</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (row of rows(); track row.evaluatorId ?? row.sNo) {
+            <tr>
+              <td>{{ row.sNo }}</td>
+              <td>{{ row.formUniqueId || '—' }}</td>
+              <td>{{ row.name || '—' }}</td>
+              <td>{{ row.designation || '—' }}</td>
+              <td [title]="row.instituteName || ''">{{ row.instituteName || '—' }}</td>
+              <td [title]="row.subject || ''">{{ row.subject || '—' }}</td>
+              <td>{{ row.teachingExperience }}</td>
+              <td [title]="row.specialization || ''">{{ row.specialization || '—' }}</td>
+              <td [title]="row.contactDisplay || ''">{{ row.contactDisplay || '—' }}</td>
+              <td [title]="row.emailId || ''">{{ row.emailId || '—' }}</td>
+              <td>{{ row.panAdharDisplay || '—' }}</td>
+              <td>
+                @if (hasFile(row.files.aadhar)) {
+                  <span class="file-ok" [title]="row.files.aadhar!.name">⬇</span>
+                } @else {
+                  <span class="file-miss">—</span>
+                }
+              </td>
+              <td>
+                @if (hasFile(row.files.pan)) {
+                  <span class="file-ok" [title]="row.files.pan!.name">⬇</span>
+                } @else {
+                  <span class="file-miss">—</span>
+                }
+              </td>
+              <td>
+                @if (hasFile(row.files.photo)) {
+                  <span class="file-ok" [title]="row.files.photo!.name">⬇</span>
+                } @else {
+                  <span class="file-miss">—</span>
+                }
+              </td>
+              <td>
+                @if (hasFile(row.files.sign)) {
+                  <span class="file-ok" [title]="row.files.sign!.name">⬇</span>
+                } @else {
+                  <span class="file-miss">—</span>
+                }
+              </td>
+              <td>
+                @if (hasFile(row.files.appointmentLetter)) {
+                  <span class="file-ok" [title]="row.files.appointmentLetter!.name">⬇</span>
+                } @else {
+                  <span class="file-miss">—</span>
+                }
+              </td>
+              <td>
+                @if (hasFile(row.files.experienceLetter)) {
+                  <span class="file-ok" [title]="row.files.experienceLetter!.name">⬇</span>
+                } @else {
+                  <span class="file-miss">—</span>
+                }
+              </td>
+              <td>
+                <button type="button" class="btn btn--print" (click)="printRow(row)">Print</button>
+              </td>
+              <td>
+                <span class="badge" [attr.data-status]="row.status">{{ row.status }}</span>
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="19" class="empty">No evaluators found for these filters.</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</section>

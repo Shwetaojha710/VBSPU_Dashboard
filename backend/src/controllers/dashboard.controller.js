@@ -4,6 +4,7 @@ const examStatusService = require('../services/exam-status.service');
 const enrollmentByTypeService = require('../services/enrollment-by-type.service');
 const courseStatusService = require('../services/course-status.service');
 const examSupervisionService = require('../services/exam-supervision.service');
+const examEvaluatorService = require('../services/exam-evaluator.service');
 const ApiError = require('../utils/ApiError');
 
 const getSummary = async (req, res, next) => {
@@ -86,6 +87,46 @@ const getExamSupervision = async (req, res, next) => {
   }
 };
 
+const getExamEvaluatorSubjects = async (req, res, next) => {
+  try {
+    res.status(200).json(await examEvaluatorService.getSubjects(req.query.status));
+  } catch (err) {
+    console.error('Exam evaluator subjects failed:', err.message);
+    next(new ApiError(503, 'Dashboard data is temporarily unavailable'));
+  }
+};
+
+const getExamEvaluators = async (req, res, next) => {
+  try {
+    res.status(200).json(
+      await examEvaluatorService.getList({
+        status: req.query.status,
+        uniqueId: req.query.uniqueId,
+        name: req.query.name,
+        contactNo: req.query.contactNo,
+        adharNo: req.query.adharNo,
+        subject: req.query.subject,
+      })
+    );
+  } catch (err) {
+    console.error('Exam evaluator list failed:', err.message);
+    next(new ApiError(503, 'Dashboard data is temporarily unavailable'));
+  }
+};
+
+const getExamEvaluatorPrint = async (req, res, next) => {
+  try {
+    const detail = await examEvaluatorService.getPrintDetail(req.params.uniqueId);
+    if (!detail) {
+      return next(new ApiError(404, 'Evaluator not found'));
+    }
+    res.status(200).json(detail);
+  } catch (err) {
+    console.error('Exam evaluator print detail failed:', err.message);
+    next(new ApiError(503, 'Dashboard data is temporarily unavailable'));
+  }
+};
+
 module.exports = {
   getSummary,
   getDetail,
@@ -95,4 +136,7 @@ module.exports = {
   getCollegeCourses,
   getExamSupervisionDates,
   getExamSupervision,
+  getExamEvaluatorSubjects,
+  getExamEvaluators,
+  getExamEvaluatorPrint,
 };
