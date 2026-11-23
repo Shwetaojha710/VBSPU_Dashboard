@@ -17,7 +17,11 @@
     </label>
     <label class="field">
       <span>Meeting</span>
-      <select name="meetingId" [(ngModel)]="filters.meetingId">
+      <select
+        name="meetingId"
+        [ngModel]="filters.meetingId"
+        (ngModelChange)="onMeetingChange($event)"
+      >
         <option [ngValue]="0">-- All --</option>
         @for (m of meetings(); track m.meetingId) {
           <option [ngValue]="m.meetingId">{{ m.label }}</option>
@@ -26,7 +30,12 @@
     </label>
     <label class="field">
       <span>Exam Date</span>
-      <select name="examDate" [(ngModel)]="filters.examDate" [disabled]="loadingMeta() || !dates().length">
+      <select
+        name="examDate"
+        [ngModel]="filters.examDate"
+        (ngModelChange)="onExamDateChange($event)"
+        [disabled]="loadingMeta() || !dates().length"
+      >
         @if (!dates().length) {
           <option value="">No dates</option>
         }
@@ -41,7 +50,7 @@
     </label>
     <label class="field">
       <span>Status</span>
-      <select name="status" [(ngModel)]="filters.status">
+      <select name="status" [ngModel]="filters.status" (ngModelChange)="onStatusChange($event)">
         <option value="all">-- All --</option>
         <option value="completed">Completed</option>
         <option value="partial">Partial</option>

@@ -134,12 +134,48 @@ export class ExamAttendanceComponent implements OnInit {
   protected onCourseTypeChange(value: string | number): void {
     this.filters.courseTypeId = Number(value) || 0;
     this.filters.meetingId = 0;
-    this.loadMeetings(false);
+    this.clearList();
+    this.loadMeetings(true);
+  }
+
+  protected onExamDateChange(value: string): void {
+    this.filters.examDate = value;
+    this.clearList();
+    this.page.set(1);
+    this.loadReport();
+  }
+
+  protected onMeetingChange(value: string | number): void {
+    this.filters.meetingId = Number(value) || 0;
+    this.clearList();
+    this.page.set(1);
+    this.loadReport();
+  }
+
+  protected onStatusChange(value: string): void {
+    this.filters.status = value || 'all';
+    this.clearList();
+    this.page.set(1);
+    this.loadReport();
   }
 
   protected search(): void {
     this.page.set(1);
     this.loadReport();
+  }
+
+  private clearList(): void {
+    this.rows.set([]);
+    this.summary.set({
+      totalCentres: 0,
+      completed: 0,
+      partial: 0,
+      pending: 0,
+      totalStudent: 0,
+      totalFeed: 0,
+      totalNotFeed: 0
+    });
+    this.error.set('');
   }
 
   protected reset(): void {
