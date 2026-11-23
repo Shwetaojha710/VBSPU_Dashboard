@@ -2,8 +2,7 @@ const { getPool, sql } = require('../config/db');
 
 /**
  * Exam supervision प्रपत्र — driven by dbo.ExamEnquiryDetails.
- * SP itself always uses "today IST" (DATEADD(MINUTE,330,GETUTCDATE())).
- * For other selected dates we run the same SP body with @examDate.
+ * The procedure takes @CenterLoginId (blank = all centres) and @ExamDate.
  */
 
 const SCHEDULE_TABLES = ['dbo.Ug1', 'dbo.PG1', 'dbo.UG3', 'dbo.UG5', 'dbo.Pg5'];
@@ -54,84 +53,6 @@ const shiftOrder = (name) => {
   if (n === 'III' || n === '3') return 3;
   return 9;
 };
-
-/**
- * Exact body of dbo.ExamEnquiryDetails, with the SP's "today IST" expression
- * replaced by @examDate so historical dates can use the same logic.
- */
-/** Non-blank gender only (matches Male + FeMale sums used for छात्र/छात्राएं). */
-const totalStudentExpr = `sum(case when nullif(ltrim(rtrim(s.Gender)),'') is not null then 1 else 0 end)`;
-
-const examEnquiryDetailsSql = `
-Select Date,sum(totalstudent) as totalstudent,Meeting,sum(MaleAbsent) as MaleAbsent,sum(FemaleAbsent) FemaleAbsent,sum(TotalFemale) TotalFemale,sum(TotalMale) TotalMale from (select format(ug1.ExamDate,'dd-MMM-yyyy') as Date,${totalStudentExpr} as 'totalstudent',(select MeetingName +' Meeting '+Timing from MeetingMaster where MeetingId= Ug1.MeetingId) as Meeting,
-sum(case when ExamAttendance.Present=0 and s.Gender='Male' then  1 else 0 end) MaleAbsent,
-sum(case when ExamAttendance.Present=0 and s.Gender='FeMale' then  1 else 0 end) FemaleAbsent,
-sum(case when s.Gender='FeMale' then  1 else 0 end) TotalFemale,
-sum(case when s.Gender='Male' then  1 else 0 end) TotalMale
-FROM  dbo.Student_Data s WITH (NOLOCK)
-INNER JOIN EVEN_SEM_PAPERS EP WITH (NOLOCK) ON RegistrationNo = ExamFormNo
-INNER JOIN dbo.PaperMaster p WITH (NOLOCK) ON p.PK_PaperID = EP.FK_PaperID
-inner Join Ug1 on Ug1.[PAPER ID]=p.PaperCode
-left outer join ExamAttendance WITH (NOLOCK) on ExamAttendance.Studentid=s.StudentId and ExamAttendance.Rollno=s.RollNo and paperid=p.PK_PaperID  and cast(CreatedAt as date)=cast(ug1.ExamDate as date)
-WHERE   cast(Ug1.ExamDate as date)=@examDate and s.Semester in(1,3,5,7)  and S.SessionId=4
-group by format(Ug1.ExamDate,'dd-MMM-yyyy'),Ug1.MeetingId
-
-union all
-select format(PG1.ExamDate,'dd-MMM-yyyy') as Date,${totalStudentExpr} as 'totalstudent',(select MeetingName +' Meeting '+Timing from MeetingMaster where MeetingId= PG1.MeetingId) as Meeting,
-sum(case when ExamAttendance.Present=0 and s.Gender='Male' then  1 else 0 end) MaleAbsent,
-sum(case when ExamAttendance.Present=0 and s.Gender='FeMale' then  1 else 0 end) FemaleAbsent,
-sum(case when s.Gender='FeMale' then  1 else 0 end) TotalFemale,
-sum(case when s.Gender='Male' then  1 else 0 end) TotalMale
-FROM  dbo.Student_Data s WITH (NOLOCK)
-INNER JOIN EVEN_SEM_PAPERS EP WITH (NOLOCK) ON RegistrationNo = ExamFormNo
-INNER JOIN dbo.PaperMaster p WITH (NOLOCK) ON p.PK_PaperID = EP.FK_PaperID
-inner Join PG1 on PG1.[PAPER ID]=p.PaperCode
-left outer join ExamAttendance WITH (NOLOCK) on ExamAttendance.Studentid=s.StudentId and ExamAttendance.Rollno=s.RollNo and paperid=p.PK_PaperID  and cast(CreatedAt as date)=cast(PG1.ExamDate as date)
-WHERE   cast(PG1.ExamDate as date)=@examDate and s.Semester in (1,3,5,7)  and S.SessionId=4
-group by format(PG1.ExamDate,'dd-MMM-yyyy'),PG1.MeetingId
-
-union all
-select format(UG3.ExamDate,'dd-MMM-yyyy') as Date,${totalStudentExpr} as 'totalstudent',(select MeetingName +' Meeting '+ Timing from MeetingMaster where MeetingId= UG3.MeetingId) as Meeting,
-sum(case when ExamAttendance.Present=0 and s.Gender='Male' then  1 else 0 end) MaleAbsent,
-sum(case when ExamAttendance.Present=0 and s.Gender='FeMale' then  1 else 0 end) FemaleAbsent,
-sum(case when s.Gender='FeMale' then  1 else 0 end) TotalFemale,
-sum(case when s.Gender='Male' then  1 else 0 end) TotalMale
-FROM  dbo.Student_Data s WITH (NOLOCK)
-INNER JOIN EVEN_SEM_PAPERS EP WITH (NOLOCK) ON RegistrationNo = ExamFormNo
-INNER JOIN dbo.PaperMaster p WITH (NOLOCK) ON p.PK_PaperID = EP.FK_PaperID
-inner Join UG3 on UG3.[PAPER ID]=p.PaperCode
-left outer join ExamAttendance WITH (NOLOCK) on ExamAttendance.Studentid=s.StudentId and ExamAttendance.Rollno=s.RollNo and paperid=p.PK_PaperID  and cast(CreatedAt as date)=cast(UG3.ExamDate as date)
-WHERE     cast(UG3.ExamDate as date)=@examDate and s.Semester in (1,3,5,7)  and S.SessionId=4
-group by format(UG3.ExamDate,'dd-MMM-yyyy'),UG3.MeetingId
-
-union all
-select format(UG5.ExamDate,'dd-MMM-yyyy') as Date,${totalStudentExpr} as 'totalstudent',(select MeetingName +' Meeting '+Timing from MeetingMaster where MeetingId= UG5.MeetingId) as Meeting,
-sum(case when ExamAttendance.Present=0 and s.Gender='Male' then  1 else 0 end) MaleAbsent,
-sum(case when ExamAttendance.Present=0 and s.Gender='FeMale' then  1 else 0 end) FemaleAbsent,
-sum(case when s.Gender='FeMale' then  1 else 0 end) TotalFemale,
-sum(case when s.Gender='Male' then  1 else 0 end) TotalMale
-FROM  dbo.Student_Data s WITH (NOLOCK)
-INNER JOIN EVEN_SEM_PAPERS EP WITH (NOLOCK) ON RegistrationNo = ExamFormNo
-INNER JOIN dbo.PaperMaster p WITH (NOLOCK) ON p.PK_PaperID = EP.FK_PaperID
-inner Join UG5 on UG5.[PAPER ID]=p.PaperCode
-left outer join ExamAttendance WITH (NOLOCK) on ExamAttendance.Studentid=s.StudentId and ExamAttendance.Rollno=s.RollNo and paperid=p.PK_PaperID  and cast(CreatedAt as date)=cast(UG5.ExamDate as date)
-WHERE   cast(UG5.ExamDate as date)=@examDate and s.Semester in (1,3,5,7) and S.SessionId=4
-group by format(UG5.ExamDate,'dd-MMM-yyyy'),UG5.MeetingId
-
-union all
-select format(Pg5.ExamDate,'dd-MMM-yyyy') as Date,${totalStudentExpr} as 'totalstudent',(select MeetingName +' Meeting '+Timing from MeetingMaster where MeetingId= Pg5.MeetingId) as Meeting,
-sum(case when ExamAttendance.Present=0 and s.Gender='Male' then  1 else 0 end) MaleAbsent,
-sum(case when ExamAttendance.Present=0 and s.Gender='FeMale' then  1 else 0 end) FemaleAbsent,
-sum(case when s.Gender='FeMale' then  1 else 0 end) TotalFemale,
-sum(case when s.Gender='Male' then  1 else 0 end) TotalMale
-FROM  dbo.Student_Data s WITH (NOLOCK)
-INNER JOIN EVEN_SEM_PAPERS EP WITH (NOLOCK) ON RegistrationNo = ExamFormNo
-INNER JOIN dbo.PaperMaster p WITH (NOLOCK) ON p.PK_PaperID = EP.FK_PaperID
-inner Join Pg5 on Pg5.[PAPER ID]=p.PaperCode
-left outer join ExamAttendance WITH (NOLOCK) on ExamAttendance.Studentid=s.StudentId and ExamAttendance.Rollno=s.RollNo and paperid=p.PK_PaperID  and cast(CreatedAt as date)=cast(Pg5.ExamDate as date)
-WHERE   cast(Pg5.ExamDate as date)=@examDate and s.Semester in (1,3,5,7) and S.SessionId=4
-group by format(Pg5.ExamDate,'dd-MMM-yyyy'),Pg5.MeetingId) as t(Date,totalstudent,Meeting,MaleAbsent,FemaleAbsent,TotalFemale,TotalMale) group by Date,Meeting ORDER bY Meeting
-`;
 
 const mapRows = (recordset) =>
   (recordset || [])
@@ -187,13 +108,6 @@ const buildReport = (day, rows, session) => {
   };
 };
 
-const getTodayIst = async (pool) => {
-  const result = await pool.request().query(`
-    SELECT CONVERT(varchar(10), CAST(DATEADD(MINUTE, 330, GETUTCDATE()) AS date), 23) AS todayIst
-  `);
-  return formatDate(result.recordset[0]?.todayIst);
-};
-
 const getDates = async () => {
   const pool = await getPool();
   const union = SCHEDULE_TABLES.map(
@@ -219,17 +133,13 @@ const getReport = async (date) => {
   }
 
   const pool = await getPool();
-  const todayIst = await getTodayIst(pool);
 
   const [rowsResult, sessionResult] = await Promise.all([
-    (async () => {
-      // Today → execute the real procedure (same as portal).
-      if (day === todayIst) {
-        return pool.request().input('CenterLoginId', sql.VarChar(50), '').execute('ExamEnquiryDetails');
-      }
-      // Other dates → same SP SQL with @examDate.
-      return pool.request().input('examDate', sql.Date, day).query(examEnquiryDetailsSql);
-    })(),
+    pool
+      .request()
+      .input('CenterLoginId', sql.VarChar(50), '')
+      .input('ExamDate', sql.VarChar(80), day)
+      .execute('ExamEnquiryDetails'),
     pool.request().query(`
       SELECT TOP 1 Session AS session FROM dbo.M_Session WHERE SessionId = 4
     `),
