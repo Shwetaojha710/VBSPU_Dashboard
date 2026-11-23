@@ -7,10 +7,12 @@ import {
   computed,
   inject,
   input,
-  signal
+  signal,
+  viewChild
 } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { AuthService } from '../../../auth/auth.service';
+import { matchSearchEntries, SearchEntry } from '../../data/search-index';
 import { DashboardData, HeaderData } from '../../dashboard.models';
 import { IconComponent } from '../icon/icon.component';
 
@@ -36,12 +38,18 @@ export class HeaderComponent {
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly router = inject(Router);
   private readonly auth = inject(AuthService);
+  private readonly queryInput = viewChild<ElementRef<HTMLInputElement>>('query');
 
   readonly university = input.required<DashboardData['university']>();
   readonly data = input.required<HeaderData>();
 
   protected readonly menuOpen = signal(false);
+  protected readonly searchOpen = signal(false);
+  protected readonly searchQuery = signal('');
+  protected readonly highlight = signal(0);
   protected readonly email = this.auth.email;
+
+  protected readonly suggestions = computed(() => matchSearchEntries(this.searchQuery(), 8));
 
   /** Current date and time, refreshed at the start of every minute. */
   protected readonly now = signal(new Date());
@@ -61,13 +69,62 @@ export class HeaderComponent {
     inject(DestroyRef).onDestroy(() => clearTimeout(timer));
   }
 
-  /** Opens the search results page for the typed query. */
-  protected search(event: Event, value: string): void {
-    event.preventDefault();
-    const q = value.trim();
-    if (q) {
-      this.router.navigate(['/search'], { queryParams: { q } });
+  protected onSearchInput(value: string): void {
+    this.searchQuery.set(value);
+    this.highlight.set(0);
+    this.searchOpen.set(value.trim().length > 0);
+  }
+
+  protected onSearchFocus(): void {
+    if (this.searchQuery().trim()) {
+      this.searchOpen.set(true);
     }
+  }
+
+  protected onSearchKeydown(event: KeyboardEvent): void {
+    const list = this.suggestions();
+    if (event.key === 'ArrowDown') {
+      event.preventDefault();
+      if (!list.length) return;
+      this.searchOpen.set(true);
+      this.highlight.set(Math.min(this.highlight() + 1, list.length - 1));
+      return;
+    }
+    if (event.key === 'ArrowUp') {
+      event.preventDefault();
+      this.highlight.set(Math.max(this.highlight() - 1, 0));
+      return;
+    }
+    if (event.key === 'Escape') {
+      this.closeSearch();
+      this.queryInput()?.nativeElement.blur();
+      return;
+    }
+  }
+
+  /** Opens the best match, or the full search results page. */
+  protected search(event: Event): void {
+    event.preventDefault();
+    const q = this.searchQuery().trim();
+    if (!q) return;
+
+    const list = this.suggestions();
+    const idx = this.highlight();
+    if (list.length && idx >= 0 && idx < list.length) {
+      this.goTo(list[idx]);
+      return;
+    }
+    if (list.length === 1) {
+      this.goTo(list[0]);
+      return;
+    }
+    this.closeSearch();
+    this.router.navigate(['/search'], { queryParams: { q } });
+  }
+
+  protected selectSuggestion(entry: SearchEntry, event?: Event): void {
+    event?.preventDefault();
+    this.goTo(entry);
   }
 
   protected toggleMenu(): void {
@@ -83,17 +140,35 @@ export class HeaderComponent {
     this.menuOpen.set(false);
   }
 
-  /** Close the VC Office menu on a click outside it. */
+  /** Close menus on a click outside. */
   @HostListener('document:click', ['$event'])
   protected onDocumentClick(event: MouseEvent): void {
+    const target = event.target as Node;
     const menu = this.host.nativeElement.querySelector('.user-menu');
-    if (this.menuOpen() && menu && !menu.contains(event.target as Node)) {
+    if (this.menuOpen() && menu && !menu.contains(target)) {
       this.closeMenu();
+    }
+    const search = this.host.nativeElement.querySelector('.search');
+    if (this.searchOpen() && search && !search.contains(target)) {
+      this.searchOpen.set(false);
     }
   }
 
   @HostListener('document:keydown.escape')
   protected onEscape(): void {
     this.closeMenu();
+    this.closeSearch();
+  }
+
+  private goTo(entry: SearchEntry): void {
+    this.searchQuery.set('');
+    this.closeSearch();
+    const path = entry.path ? `/${entry.path}` : '/';
+    this.router.navigateByUrl(path);
+  }
+
+  private closeSearch(): void {
+    this.searchOpen.set(false);
+    this.highlight.set(0);
   }
 }

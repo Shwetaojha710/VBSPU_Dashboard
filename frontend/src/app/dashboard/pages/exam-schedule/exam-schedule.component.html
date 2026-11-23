@@ -8,7 +8,7 @@
         <span>Total: {{ visibleTotal() }}</span>
         <span>UG: {{ visibleUg() }}</span>
         <span>PG: {{ visiblePg() }}</span>
-        @if (searchQuery().trim()) {
+        @if (searchQuery().trim() || selectedSubject() !== 'all') {
           <span class="summary__muted">of {{ totalRecord() }}</span>
         }
       </div>
@@ -16,19 +16,15 @@
     <div class="toolbar">
       <label class="field field--search">
         <span class="field__label">Search</span>
-        <div class="search-box">
-          <input
-            type="text"
-            class="field__control"
-            [ngModel]="searchQuery()"
-            (ngModelChange)="onSearchChange($event)"
-            placeholder="Search any column…"
-            autocomplete="off"
-          />
-          @if (searchQuery()) {
-            <button type="button" class="search-box__clear" (click)="clearSearch()" aria-label="Clear search">×</button>
-          }
-        </div>
+        <input
+          type="text"
+          class="field__control"
+          [value]="searchQuery()"
+          (input)="onSearchChange($any($event.target).value)"
+          placeholder="Search any column…"
+          autocomplete="off"
+          spellcheck="false"
+        />
       </label>
       <label class="field">
         <span class="field__label">Exam date</span>

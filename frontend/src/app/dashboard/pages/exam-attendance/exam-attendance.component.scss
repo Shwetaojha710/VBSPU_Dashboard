@@ -73,6 +73,15 @@
   padding-right: 28px;
 }
 
+.search-box input::-webkit-search-cancel-button,
+.search-box input::-ms-clear {
+  -webkit-appearance: none;
+  appearance: none;
+  display: none;
+  width: 0;
+  height: 0;
+}
+
 .search-box__clear {
   position: absolute;
   top: 50%;

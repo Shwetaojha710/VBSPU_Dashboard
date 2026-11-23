@@ -59,19 +59,16 @@
     </label>
     <label class="field field--search">
       <span>Search</span>
-      <div class="search-box">
-        <input
-          type="text"
-          name="tableSearch"
-          [ngModel]="searchQuery()"
-          (ngModelChange)="onSearchChange($event)"
-          placeholder="Search any column…"
-          autocomplete="off"
-        />
-        @if (searchQuery()) {
-          <button type="button" class="search-box__clear" (click)="clearSearch()" aria-label="Clear search">×</button>
-        }
-      </div>
+      <input
+        type="text"
+        name="tableSearch"
+        class="field__control"
+        [value]="searchQuery()"
+        (input)="onSearchChange($any($event.target).value)"
+        placeholder="Search any column…"
+        autocomplete="off"
+        spellcheck="false"
+      />
     </label>
     <div class="filters__actions">
       <button type="submit" class="btn btn--search" [disabled]="loading() || loadingMeta()">Search</button>

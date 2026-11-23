@@ -63,10 +63,10 @@ export class ExamScheduleComponent implements OnInit {
 
   protected readonly filteredRows = computed(() => {
     const q = this.searchQuery().trim().toLowerCase();
-    const subject = this.selectedSubject();
+    const subject = this.selectedSubject().trim().toLowerCase();
     let list = this.rows();
-    if (subject !== 'all') {
-      list = list.filter((r) => (r.subject ?? '').trim() === subject);
+    if (subject && subject !== 'all') {
+      list = list.filter((r) => (r.subject ?? '').trim().toLowerCase() === subject);
     }
     if (!q) return list;
     return list.filter((r) => rowMatchesQuery(r, q));

@@ -14,11 +14,46 @@
       <span class="datetime__time">{{ time() }}</span>
     </a>
 
-    <form class="search" role="search" (submit)="search($event, query.value)">
+    <form class="search" role="search" (submit)="search($event)">
       <button class="search__icon" type="submit" aria-label="Search">
         <app-icon name="search" [size]="20" [strokeWidth]="2" />
       </button>
-      <input #query class="search__input" type="search" name="q" [placeholder]="data().searchPlaceholder" [attr.aria-label]="data().searchPlaceholder" />
+      <input
+        #query
+        class="search__input"
+        type="text"
+        name="q"
+        [value]="searchQuery()"
+        (input)="onSearchInput($any($event.target).value)"
+        (focus)="onSearchFocus()"
+        (keydown)="onSearchKeydown($event)"
+        [placeholder]="data().searchPlaceholder"
+        [attr.aria-label]="data().searchPlaceholder"
+        [attr.aria-expanded]="searchOpen()"
+        aria-autocomplete="list"
+        aria-controls="header-search-list"
+        autocomplete="off"
+        spellcheck="false"
+      />
+      @if (searchOpen()) {
+        <ul id="header-search-list" class="search__list" role="listbox">
+          @for (item of suggestions(); track item.context + item.path + item.label; let i = $index) {
+            <li role="option" [attr.aria-selected]="highlight() === i">
+              <button
+                type="button"
+                class="search__option"
+                [class.search__option--active]="highlight() === i"
+                (mousedown)="selectSuggestion(item, $event)"
+              >
+                <span class="search__option-label">{{ item.label }}</span>
+                <span class="search__option-context">{{ item.context }}</span>
+              </button>
+            </li>
+          } @empty {
+            <li class="search__empty" role="presentation">No matches. Try “students”, “colleges”, or “exam schedule”.</li>
+          }
+        </ul>
+      }
     </form>
 
     <div class="actions">

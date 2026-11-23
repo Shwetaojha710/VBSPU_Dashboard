@@ -101,10 +101,14 @@
   min-width: 220px;
 }
 
-.search-box .field__control::-webkit-search-cancel-button {
+/* Hide browser native clear so only our custom × shows (and stays in sync with Angular). */
+.search-box .field__control::-webkit-search-cancel-button,
+.search-box .field__control::-ms-clear {
   -webkit-appearance: none;
   appearance: none;
   display: none;
+  width: 0;
+  height: 0;
 }
 
 .search-box__clear {
