@@ -106,8 +106,10 @@ const getDates = async () => {
 };
 
 const getSchedule = async ({ date, level = 'all' } = {}) => {
-  const day = String(date || '').trim();
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) {
+  const dayRaw = String(date || '').trim().toLowerCase();
+  const allDates = !dayRaw || dayRaw === 'all';
+  const day = allDates ? null : dayRaw;
+  if (!allDates && !/^\d{4}-\d{2}-\d{2}$/.test(day)) {
     const err = new Error('Invalid date');
     err.status = 400;
     throw err;
@@ -122,7 +124,12 @@ const getSchedule = async ({ date, level = 'all' } = {}) => {
 
   const pool = await getPool();
   const req = pool.request();
-  req.input('examDate', sql.VarChar(10), day);
+
+  let dateFilter = '';
+  if (!allDates) {
+    req.input('examDate', sql.VarChar(10), day);
+    dateFilter = 'AND u.examDate = @examDate';
+  }
 
   let levelFilter = '';
   if (levelKey === 'ug') levelFilter = `AND u.levelType = 'UG'`;
@@ -147,11 +154,13 @@ const getSchedule = async ({ date, level = 'all' } = {}) => {
       ${unionSql()}
     ) u
     LEFT JOIN dbo.MeetingMaster m ON m.MeetingId = u.meetingId
-    WHERE u.examDate = @examDate
+    WHERE 1 = 1
+      ${dateFilter}
       ${levelFilter}
     ORDER BY
+      u.examDate ASC,
+      u.course ASC,
       CASE u.levelType WHEN 'UG' THEN 0 ELSE 1 END,
-      u.sourceTable,
       ISNULL(u.meetingId, 99),
       u.paperId
   `);
@@ -187,7 +196,7 @@ const getSchedule = async ({ date, level = 'all' } = {}) => {
   });
 
   return {
-    date: day,
+    date: allDates ? 'all' : day,
     level: levelKey,
     totalRecord: rows.length,
     ugCount: rows.filter((r) => r.level === 'UG').length,

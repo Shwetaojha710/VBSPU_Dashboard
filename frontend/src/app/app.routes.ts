@@ -6,6 +6,7 @@ import { ExamStatusComponent } from './dashboard/pages/exam-status/exam-status.c
 import { ExamSupervisionComponent } from './dashboard/pages/exam-supervision/exam-supervision.component';
 import { ExamEvaluatorsComponent } from './dashboard/pages/exam-evaluators/exam-evaluators.component';
 import { ExamScheduleComponent } from './dashboard/pages/exam-schedule/exam-schedule.component';
+import { ExamAttendanceComponent } from './dashboard/pages/exam-attendance/exam-attendance.component';
 import { OverviewComponent } from './dashboard/pages/overview/overview.component';
 import { SectionComponent } from './dashboard/pages/section/section.component';
 
@@ -32,6 +33,11 @@ export const routes: Routes = [
         path: 'exam-schedule',
         component: ExamScheduleComponent,
         title: 'Exam Schedule – VBSPU Dashboard'
+      },
+      {
+        path: 'exam-attendance',
+        component: ExamAttendanceComponent,
+        title: 'Exam Attendance – VBSPU Dashboard'
       },
       { path: ':section', component: SectionComponent, title: 'VBSPU VC Dashboard' }
     ]

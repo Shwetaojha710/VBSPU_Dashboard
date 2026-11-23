@@ -80,6 +80,11 @@
       "icon": "clipboard-list"
     },
     {
+      "label": "Exam Attendance",
+      "path": "exam-attendance",
+      "icon": "clipboard-list"
+    },
+    {
       "label": "AI Teaching & Faculty",
       "path": "ai-teaching-faculty",
       "icon": "brain",

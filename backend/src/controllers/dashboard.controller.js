@@ -6,6 +6,7 @@ const courseStatusService = require('../services/course-status.service');
 const examSupervisionService = require('../services/exam-supervision.service');
 const examEvaluatorService = require('../services/exam-evaluator.service');
 const examScheduleService = require('../services/exam-schedule.service');
+const examAttendanceService = require('../services/exam-attendance.service');
 const ApiError = require('../utils/ApiError');
 
 const getSummary = async (req, res, next) => {
@@ -154,6 +155,41 @@ const getExamSchedule = async (req, res, next) => {
   }
 };
 
+const getExamAttendanceMeetings = async (req, res, next) => {
+  try {
+    res.status(200).json(await examAttendanceService.getMeetings(req.query.courseTypeId));
+  } catch (err) {
+    console.error('Exam attendance meetings failed:', err.message);
+    next(new ApiError(503, 'Dashboard data is temporarily unavailable'));
+  }
+};
+
+const getExamAttendanceDates = async (req, res, next) => {
+  try {
+    res.status(200).json(await examAttendanceService.getDates());
+  } catch (err) {
+    console.error('Exam attendance dates failed:', err.message);
+    next(new ApiError(503, 'Dashboard data is temporarily unavailable'));
+  }
+};
+
+const getExamAttendance = async (req, res, next) => {
+  try {
+    res.status(200).json(
+      await examAttendanceService.getReport({
+        courseTypeId: req.query.courseTypeId,
+        meetingId: req.query.meetingId,
+        examDate: req.query.examDate,
+        centerCode: req.query.centerCode,
+        status: req.query.status,
+      })
+    );
+  } catch (err) {
+    console.error('Exam attendance report failed:', err.message);
+    next(new ApiError(503, 'Dashboard data is temporarily unavailable'));
+  }
+};
+
 module.exports = {
   getSummary,
   getDetail,
@@ -168,4 +204,7 @@ module.exports = {
   getExamEvaluatorPrint,
   getExamScheduleDates,
   getExamSchedule,
+  getExamAttendanceMeetings,
+  getExamAttendanceDates,
+  getExamAttendance,
 };

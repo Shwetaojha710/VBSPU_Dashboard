@@ -45,7 +45,10 @@ src/
 | GET    | `/api/dashboard/exam-evaluators/subjects` | Distinct subjects for evaluator filter dropdown |
 | GET    | `/api/dashboard/exam-evaluators/:uniqueId/print` | Teacher Registration print detail (photo/sign/aadhar URLs) |
 | GET    | `/api/dashboard/exam-schedule/dates` | Distinct exam dates from Ug1/UG3/UG5/PG1/Pg5 |
-| GET    | `/api/dashboard/exam-schedule?date=&level=` | Exam schedule (`level`: `all` \| `ug` \| `pg`) |
+| GET    | `/api/dashboard/exam-schedule?date=&level=` | Exam schedule (`date`: `YYYY-MM-DD` \| `all`; `level`: `all` \| `ug` \| `pg`; ordered by exam date, course) |
+| GET    | `/api/dashboard/exam-attendance/dates` | Exam dates for attendance filters |
+| GET    | `/api/dashboard/exam-attendance/meetings` | MeetingMaster options (`courseTypeId`) |
+| GET    | `/api/dashboard/exam-attendance` | Centre-wise attendance via `CentreWiseAttendanceReport` |
 
 ## Login
 

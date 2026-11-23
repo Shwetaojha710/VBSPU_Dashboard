@@ -40,7 +40,7 @@ export class ExamScheduleComponent implements OnInit {
   private readonly http = inject(HttpClient);
 
   protected readonly dates = signal<string[]>([]);
-  protected readonly selectedDate = signal('');
+  protected readonly selectedDate = signal('all');
   protected readonly level = signal<'all' | 'ug' | 'pg'>('all');
   protected readonly rows = signal<ScheduleRow[]>([]);
   protected readonly totalRecord = signal(0);
@@ -56,11 +56,13 @@ export class ExamScheduleComponent implements OnInit {
         const list = [...(res.dates ?? [])].sort();
         this.dates.set(list);
         this.loadingDates.set(false);
-        if (!list.length) return;
+        // Prefer today when available; otherwise keep All.
         const today = localIsoDate();
-        const upcoming = list.find((d) => d >= today);
-        const initial = list.includes(today) ? today : upcoming ?? list[list.length - 1];
-        this.selectedDate.set(initial);
+        if (list.includes(today)) {
+          this.selectedDate.set(today);
+        } else {
+          this.selectedDate.set('all');
+        }
         this.loadSchedule();
       },
       error: () => {
@@ -71,7 +73,7 @@ export class ExamScheduleComponent implements OnInit {
   }
 
   protected onDateChange(value: string): void {
-    this.selectedDate.set(value);
+    this.selectedDate.set(value || 'all');
     this.loadSchedule();
   }
 
@@ -81,16 +83,9 @@ export class ExamScheduleComponent implements OnInit {
   }
 
   protected loadSchedule(): void {
-    const date = this.selectedDate();
-    if (!date) {
-      this.rows.set([]);
-      this.totalRecord.set(0);
-      this.ugCount.set(0);
-      this.pgCount.set(0);
-      return;
-    }
     this.loading.set(true);
     this.error.set('');
+    const date = this.selectedDate() || 'all';
     const params = new HttpParams().set('date', date).set('level', this.level());
     this.http.get<ScheduleResponse>(`${environment.apiUrl}/dashboard/exam-schedule`, { params }).subscribe({
       next: (res) => {
@@ -110,6 +105,57 @@ export class ExamScheduleComponent implements OnInit {
       }
     });
   }
+
+  protected exportExcel(): void {
+    const list = this.rows();
+    if (!list.length) {
+      this.error.set('No rows to export.');
+      return;
+    }
+    const headers = [
+      'S.No.',
+      'Exam Date',
+      'Level',
+      'Source',
+      'Course',
+      'Subject',
+      'Paper ID',
+      'Paper Name',
+      'Meeting / Time'
+    ];
+    const lines = [
+      headers.join(','),
+      ...list.map((r) =>
+        [
+          r.sNo,
+          csv(r.examDate),
+          csv(r.level),
+          csv(r.source),
+          csv(r.course),
+          csv(r.subject),
+          csv(r.paperId),
+          csv(r.paperName),
+          csv(r.meeting || r.timing)
+        ].join(',')
+      )
+    ];
+    const blob = new Blob(['\ufeff' + lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `exam-schedule-${this.selectedDate() || 'all'}-${this.level()}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  protected downloadPdf(): void {
+    const list = this.rows();
+    if (!list.length) {
+      this.error.set('No rows to download as PDF.');
+      return;
+    }
+    printHtml(buildSchedulePrintHtml(list, this.selectedDate(), this.level()));
+  }
 }
 
 function localIsoDate(): string {
@@ -118,4 +164,79 @@ function localIsoDate(): string {
   const m = String(d.getMonth() + 1).padStart(2, '0');
   const day = String(d.getDate()).padStart(2, '0');
   return `${y}-${m}-${day}`;
+}
+
+function csv(value: unknown): string {
+  const s = value == null ? '' : String(value);
+  return `"${s.replace(/"/g, '""')}"`;
+}
+
+function esc(value: unknown): string {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function printHtml(html: string): void {
+  const iframe = document.createElement('iframe');
+  iframe.setAttribute('aria-hidden', 'true');
+  iframe.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;';
+  document.body.appendChild(iframe);
+  const win = iframe.contentWindow;
+  const doc = win?.document;
+  if (!win || !doc) {
+    iframe.remove();
+    return;
+  }
+  doc.open();
+  doc.write(html);
+  doc.close();
+  const cleanup = () => setTimeout(() => iframe.remove(), 500);
+  win.addEventListener('afterprint', cleanup, { once: true });
+  setTimeout(() => {
+    win.focus();
+    win.print();
+    setTimeout(cleanup, 2000);
+  }, 300);
+}
+
+function buildSchedulePrintHtml(rows: ScheduleRow[], date: string, level: string): string {
+  const body = rows
+    .map(
+      (r) => `<tr>
+      <td>${r.sNo}</td>
+      <td>${esc(r.examDate)}</td>
+      <td>${esc(r.level)}</td>
+      <td>${esc(r.source)}</td>
+      <td>${esc(r.course)}</td>
+      <td>${esc(r.subject)}</td>
+      <td>${esc(r.paperId)}</td>
+      <td>${esc(r.paperName)}</td>
+      <td>${esc(r.meeting || r.timing)}</td>
+    </tr>`
+    )
+    .join('');
+  return `<!doctype html><html><head><meta charset="utf-8"/>
+  <title>Exam Schedule</title>
+  <style>
+    body{font-family:Arial,sans-serif;padding:16px;font-size:11px;color:#111}
+    h1{margin:0 0 4px;font-size:18px}
+    .meta{margin:0 0 12px;color:#444}
+    table{border-collapse:collapse;width:100%}
+    th,td{border:1px solid #333;padding:5px 6px;text-align:left;vertical-align:top}
+    th{background:#1f4b7a;color:#fff}
+    @media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+  </style></head><body>
+  <h1>Exam Schedule</h1>
+  <p class="meta">Date: ${esc(date === 'all' ? 'All' : date)} · Level: ${esc(level.toUpperCase())} · Total: ${rows.length}</p>
+  <table>
+    <thead><tr>
+      <th>S.No.</th><th>Exam Date</th><th>Level</th><th>Source</th><th>Course</th>
+      <th>Subject</th><th>Paper ID</th><th>Paper Name</th><th>Meeting / Time</th>
+    </tr></thead>
+    <tbody>${body}</tbody>
+  </table>
+  </body></html>`;
 }

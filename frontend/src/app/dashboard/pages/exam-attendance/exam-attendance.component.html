@@ -1,0 +1,135 @@
+<section class="page" aria-label="Exam attendance">
+  <a class="page__link" routerLink="/">← Back to Overview</a>
+  <h1 class="page__title">Exam Attendance</h1>
+
+  <form class="filters" (ngSubmit)="search()">
+    <label class="field">
+      <span>Course Type</span>
+      <select
+        name="courseTypeId"
+        [ngModel]="filters.courseTypeId"
+        (ngModelChange)="onCourseTypeChange($event)"
+      >
+        <option [ngValue]="0">All</option>
+        <option [ngValue]="1">Under Graduate (U.G)</option>
+        <option [ngValue]="2">Post Graduate (P.G)</option>
+      </select>
+    </label>
+    <label class="field">
+      <span>Meeting</span>
+      <select name="meetingId" [(ngModel)]="filters.meetingId">
+        <option [ngValue]="0">-- All --</option>
+        @for (m of meetings(); track m.meetingId) {
+          <option [ngValue]="m.meetingId">{{ m.label }}</option>
+        }
+      </select>
+    </label>
+    <label class="field">
+      <span>Exam Date</span>
+      <select name="examDate" [(ngModel)]="filters.examDate" [disabled]="loadingMeta() || !dates().length">
+        @if (!dates().length) {
+          <option value="">No dates</option>
+        }
+        @for (d of dates(); track d) {
+          <option [value]="d">{{ d }}</option>
+        }
+      </select>
+    </label>
+    <label class="field">
+      <span>Center Code</span>
+      <input type="text" name="centerCode" [(ngModel)]="filters.centerCode" placeholder="Center code" />
+    </label>
+    <label class="field">
+      <span>Status</span>
+      <select name="status" [(ngModel)]="filters.status">
+        <option value="all">-- All --</option>
+        <option value="completed">Completed</option>
+        <option value="partial">Partial</option>
+        <option value="pending">Pending</option>
+      </select>
+    </label>
+    <div class="filters__actions">
+      <button type="submit" class="btn btn--search" [disabled]="loading() || loadingMeta()">Search</button>
+      <button type="button" class="btn btn--reset" (click)="reset()" [disabled]="loading()">Reset</button>
+      <button type="button" class="btn btn--excel" (click)="exportExcel()" [disabled]="!rows().length">
+        Export To Excel
+      </button>
+    </div>
+  </form>
+
+  <div class="kpis">
+    <article class="kpi kpi--blue">
+      <span class="kpi__label">Total Centres</span>
+      <strong class="kpi__value">{{ summary().totalCentres }}</strong>
+    </article>
+    <article class="kpi kpi--green">
+      <span class="kpi__label">Completed</span>
+      <strong class="kpi__value">{{ summary().completed }}</strong>
+    </article>
+    <article class="kpi kpi--amber">
+      <span class="kpi__label">Partial</span>
+      <strong class="kpi__value">{{ summary().partial }}</strong>
+    </article>
+    <article class="kpi kpi--red">
+      <span class="kpi__label">Pending (Not Feed)</span>
+      <strong class="kpi__value">{{ summary().pending }}</strong>
+    </article>
+  </div>
+
+  <div class="toolbar">
+    <span class="pill pill--dark">TOTAL: {{ summary().totalStudent }}</span>
+    <span class="pill pill--feed">TOTAL FEED: {{ summary().totalFeed }}</span>
+    <span class="pill pill--not">TOTAL NOT FEED: {{ summary().totalNotFeed }}</span>
+  </div>
+
+  @if (error()) {
+    <p class="page__error" role="alert">{{ error() }}</p>
+  }
+
+  @if (loading() || loadingMeta()) {
+    <p class="page__text">Loading attendance report…</p>
+  } @else {
+    <div class="table-wrap">
+      <table class="grid">
+        <thead>
+          <tr>
+            <th>S.No</th>
+            <th>Date</th>
+            <th>Meeting</th>
+            <th>Center Code</th>
+            <th>Center Name</th>
+            <th>Manager Name</th>
+            <th>Manager Mobile</th>
+            <th>Total Student</th>
+            <th>Total Feed</th>
+            <th>Total Not Feed</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (row of rows(); track row.sNo + '-' + (row.centerCode || '') + '-' + (row.meetingId || 0)) {
+            <tr [attr.data-status]="row.status">
+              <td>{{ row.sNo }}</td>
+              <td>{{ row.date || '—' }}</td>
+              <td>{{ row.meeting || '—' }}</td>
+              <td>{{ row.centerCode || '—' }}</td>
+              <td>{{ row.centreName || '—' }}</td>
+              <td>{{ row.managerName || '—' }}</td>
+              <td>{{ row.managerMobile || '—' }}</td>
+              <td><span class="num">{{ row.totalStudent }}</span></td>
+              <td><span class="num num--feed">{{ row.totalFeed }}</span></td>
+              <td><span class="num num--not">{{ row.totalNotFeed }}</span></td>
+              <td>
+                <span class="status" [attr.data-status]="row.status">{{ row.status }}</span>
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="11" class="empty">No centres found for these filters.</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</section>

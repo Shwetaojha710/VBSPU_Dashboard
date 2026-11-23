@@ -4,6 +4,11 @@
   <header class="page__header">
     <div>
       <h1 class="page__title">Exam Schedule</h1>
+      <div class="summary">
+        <span>Total: {{ totalRecord() }}</span>
+        <span>UG: {{ ugCount() }}</span>
+        <span>PG: {{ pgCount() }}</span>
+      </div>
     </div>
     <div class="toolbar">
       <label class="field">
@@ -12,11 +17,9 @@
           class="field__control"
           [ngModel]="selectedDate()"
           (ngModelChange)="onDateChange($event)"
-          [disabled]="loadingDates() || !dates().length"
+          [disabled]="loadingDates()"
         >
-          @if (!dates().length) {
-            <option value="">No exam dates found</option>
-          }
+          <option value="all">All</option>
           @for (d of dates(); track d) {
             <option [value]="d">{{ d }}</option>
           }
@@ -28,21 +31,21 @@
           class="field__control"
           [ngModel]="level()"
           (ngModelChange)="onLevelChange($event)"
-          [disabled]="loading() || !selectedDate()"
+          [disabled]="loading()"
         >
           <option value="all">All</option>
           <option value="ug">UG</option>
           <option value="pg">PG</option>
         </select>
       </label>
+      <button type="button" class="btn btn--excel" (click)="exportExcel()" [disabled]="!rows().length || loading()">
+        Export Excel
+      </button>
+      <button type="button" class="btn btn--pdf" (click)="downloadPdf()" [disabled]="!rows().length || loading()">
+        Download PDF
+      </button>
     </div>
   </header>
-
-  <div class="summary">
-    <span>Total: {{ totalRecord() }}</span>
-    <span>UG: {{ ugCount() }}</span>
-    <span>PG: {{ pgCount() }}</span>
-  </div>
 
   @if (error()) {
     <p class="page__error" role="alert">{{ error() }}</p>
@@ -56,6 +59,7 @@
         <thead>
           <tr>
             <th>S.No.</th>
+            <th>Exam Date</th>
             <th>Level</th>
             <th>Source</th>
             <th>Course</th>
@@ -66,9 +70,10 @@
           </tr>
         </thead>
         <tbody>
-          @for (row of rows(); track row.sNo + '-' + (row.paperId || '') + '-' + row.source) {
+          @for (row of rows(); track row.sNo + '-' + (row.paperId || '') + '-' + row.source + '-' + row.examDate) {
             <tr>
               <td>{{ row.sNo }}</td>
+              <td>{{ row.examDate || '—' }}</td>
               <td>
                 <span class="badge" [attr.data-level]="row.level">{{ row.level }}</span>
               </td>
@@ -81,7 +86,7 @@
             </tr>
           } @empty {
             <tr>
-              <td colspan="8" class="empty">No papers scheduled for this date / filter.</td>
+              <td colspan="9" class="empty">No papers scheduled for this filter.</td>
             </tr>
           }
         </tbody>
