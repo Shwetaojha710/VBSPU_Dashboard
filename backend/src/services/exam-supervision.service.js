@@ -54,13 +54,71 @@ const shiftOrder = (name) => {
   return 9;
 };
 
+const meetingKey = (value) => String(value || '').replace(/\s+/g, ' ').trim().toLowerCase();
+
+/**
+ * ExamEnquiryDetails counts every non-Female row as male, so blank gender inflates छात्र.
+ * This uses the same joins and date, but Male and Female only.
+ */
+const genderCountSql = `
+SELECT
+  Meeting,
+  SUM(TotalMale) AS TotalMale,
+  SUM(TotalFemale) AS TotalFemale,
+  SUM(MaleAbsent) AS MaleAbsent,
+  SUM(FemaleAbsent) AS FemaleAbsent
+FROM (
+  ${['Ug1', 'PG1', 'UG3', 'UG5', 'Pg5']
+    .map(
+      (table) => `
+  SELECT
+    (SELECT MeetingName + ' Meeting ' + Timing FROM MeetingMaster WHERE MeetingId = src.MeetingId) AS Meeting,
+    SUM(CASE WHEN UPPER(LTRIM(RTRIM(ISNULL(s.Gender, '')))) = 'MALE' THEN 1 ELSE 0 END) AS TotalMale,
+    SUM(CASE WHEN UPPER(LTRIM(RTRIM(ISNULL(s.Gender, '')))) = 'FEMALE' THEN 1 ELSE 0 END) AS TotalFemale,
+    SUM(CASE WHEN ExamAttendance.Present = 0 AND UPPER(LTRIM(RTRIM(ISNULL(s.Gender, '')))) = 'MALE' THEN 1 ELSE 0 END) AS MaleAbsent,
+    SUM(CASE WHEN ExamAttendance.Present = 0 AND UPPER(LTRIM(RTRIM(ISNULL(s.Gender, '')))) = 'FEMALE' THEN 1 ELSE 0 END) AS FemaleAbsent
+  FROM dbo.Student_Data s WITH (NOLOCK)
+  INNER JOIN EVEN_SEM_PAPERS EP WITH (NOLOCK) ON RegistrationNo = ExamFormNo
+  INNER JOIN dbo.PaperMaster p WITH (NOLOCK) ON p.PK_PaperID = EP.FK_PaperID
+  INNER JOIN dbo.${table} src ON src.[PAPER ID] = p.PaperCode
+  LEFT OUTER JOIN ExamAttendance WITH (NOLOCK)
+    ON ExamAttendance.Studentid = s.StudentId
+   AND ExamAttendance.Rollno = s.RollNo
+   AND paperid = p.PK_PaperID
+   AND CAST(CreatedAt AS date) = CAST(src.ExamDate AS date)
+  WHERE CAST(src.ExamDate AS date) = @examDate
+    AND s.Semester IN (1, 3, 5, 7)
+    AND s.SessionId = 4
+  GROUP BY src.MeetingId`
+    )
+    .join('\n  UNION ALL')}
+) g
+GROUP BY Meeting
+`;
+
+/** Replace procedure gender columns with strict Male / Female counts for the same meetings. */
+const applyGenderCounts = (recordset, genderRows) => {
+  const byMeeting = new Map((genderRows || []).map((row) => [meetingKey(row.Meeting), row]));
+  return (recordset || []).map((row) => {
+    const match = byMeeting.get(meetingKey(row.Meeting));
+    if (!match) return row;
+    return {
+      ...row,
+      TotalMale: match.TotalMale,
+      TotalFemale: match.TotalFemale,
+      MaleAbsent: match.MaleAbsent,
+      FemaleAbsent: match.FemaleAbsent,
+    };
+  });
+};
+
 const mapRows = (recordset) =>
   (recordset || [])
     .map((r) => {
       const parsed = parseMeeting(r.Meeting);
       const male = Number(r.TotalMale) || 0;
       const female = Number(r.TotalFemale) || 0;
-      // Exclude blank/NULL gender — कुल = छात्र + छात्राएं (same as non-blank count).
+      // Blank and other genders stay out, so कुल = छात्र + छात्राएं.
       const total = male + female;
       const absentMale = Number(r.MaleAbsent) || 0;
       const absentFemale = Number(r.FemaleAbsent) || 0;
@@ -134,7 +192,7 @@ const getReport = async (date) => {
 
   const pool = await getPool();
 
-  const [rowsResult, sessionResult] = await Promise.all([
+  const [rowsResult, sessionResult, genderResult] = await Promise.all([
     pool
       .request()
       .input('CenterLoginId', sql.VarChar(50), '')
@@ -143,9 +201,17 @@ const getReport = async (date) => {
     pool.request().query(`
       SELECT TOP 1 Session AS session FROM dbo.M_Session WHERE SessionId = 4
     `),
+    pool
+      .request()
+      .input('examDate', sql.Date, day)
+      .query(genderCountSql)
+      .catch((err) => {
+        console.error('Supervision gender split failed, using procedure counts:', err.message);
+        return null;
+      }),
   ]);
 
-  const recordset = rowsResult.recordset || [];
+  const recordset = applyGenderCounts(rowsResult.recordset || [], genderResult?.recordset);
   const rows = mapRows(recordset);
   const reportDate = parseSpDate(recordset[0]?.Date) || day;
 
