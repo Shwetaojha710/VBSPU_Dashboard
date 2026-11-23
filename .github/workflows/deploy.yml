@@ -58,10 +58,10 @@ jobs:
             set -e
             cd "${{ secrets.DEPLOY_PATH }}/backend"
             npm ci --omit=dev
-            if pm2 describe vbspu-api > /dev/null 2>&1; then
-              pm2 restart vbspu-api --update-env
-            else
-              pm2 start ecosystem.config.cjs
-            fi
+            # Keep daemon in sync with local CLI (avoids stale PID / version mismatch).
+            pm2 update || true
+            # delete+start is more reliable than restart when PM2 has a ghost PID.
+            pm2 delete vbspu-api 2>/dev/null || true
+            pm2 start ecosystem.config.cjs --update-env
             pm2 save
           EOF
