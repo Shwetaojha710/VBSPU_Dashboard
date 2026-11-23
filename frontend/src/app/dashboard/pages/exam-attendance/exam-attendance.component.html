@@ -57,10 +57,26 @@
         <option value="pending">Pending</option>
       </select>
     </label>
+    <label class="field field--search">
+      <span>Search</span>
+      <div class="search-box">
+        <input
+          type="text"
+          name="tableSearch"
+          [ngModel]="searchQuery()"
+          (ngModelChange)="onSearchChange($event)"
+          placeholder="Search any column…"
+          autocomplete="off"
+        />
+        @if (searchQuery()) {
+          <button type="button" class="search-box__clear" (click)="clearSearch()" aria-label="Clear search">×</button>
+        }
+      </div>
+    </label>
     <div class="filters__actions">
       <button type="submit" class="btn btn--search" [disabled]="loading() || loadingMeta()">Search</button>
       <button type="button" class="btn btn--reset" (click)="reset()" [disabled]="loading()">Reset</button>
-      <button type="button" class="btn btn--excel" (click)="exportExcel()" [disabled]="!rows().length">
+      <button type="button" class="btn btn--excel" (click)="exportExcel()" [disabled]="!filteredRows().length">
         Export To Excel
       </button>
     </div>
@@ -69,26 +85,26 @@
   <div class="kpis">
     <article class="kpi kpi--blue">
       <span class="kpi__label">Total Centres</span>
-      <strong class="kpi__value">{{ summary().totalCentres }}</strong>
+      <strong class="kpi__value">{{ filteredSummary().totalCentres }}</strong>
     </article>
     <article class="kpi kpi--green">
       <span class="kpi__label">Completed</span>
-      <strong class="kpi__value">{{ summary().completed }}</strong>
+      <strong class="kpi__value">{{ filteredSummary().completed }}</strong>
     </article>
     <article class="kpi kpi--amber">
       <span class="kpi__label">Partial</span>
-      <strong class="kpi__value">{{ summary().partial }}</strong>
+      <strong class="kpi__value">{{ filteredSummary().partial }}</strong>
     </article>
     <article class="kpi kpi--red">
       <span class="kpi__label">Pending (Not Feed)</span>
-      <strong class="kpi__value">{{ summary().pending }}</strong>
+      <strong class="kpi__value">{{ filteredSummary().pending }}</strong>
     </article>
   </div>
 
   <div class="toolbar">
-    <span class="pill pill--dark">TOTAL: {{ summary().totalStudent }}</span>
-    <span class="pill pill--feed">TOTAL FEED: {{ summary().totalFeed }}</span>
-    <span class="pill pill--not">TOTAL NOT FEED: {{ summary().totalNotFeed }}</span>
+    <span class="pill pill--dark">TOTAL: {{ filteredSummary().totalStudent }}</span>
+    <span class="pill pill--feed">TOTAL FEED: {{ filteredSummary().totalFeed }}</span>
+    <span class="pill pill--not">TOTAL NOT FEED: {{ filteredSummary().totalNotFeed }}</span>
   </div>
 
   @if (error()) {
@@ -134,17 +150,22 @@
             </tr>
           } @empty {
             <tr>
-              <td colspan="11" class="empty">No centres found for these filters.</td>
+              <td colspan="11" class="empty">
+                {{ searchQuery().trim() ? 'No matching centres for this search.' : 'No centres found for these filters.' }}
+              </td>
             </tr>
           }
         </tbody>
       </table>
     </div>
 
-    @if (rows().length) {
+    @if (filteredRows().length) {
       <div class="pager">
         <div class="pager__info">
-          Showing {{ pageStart() }}–{{ pageEnd() }} of {{ rows().length }}
+          Showing {{ pageStart() }}–{{ pageEnd() }} of {{ filteredRows().length }}
+          @if (searchQuery().trim()) {
+            <span>(filtered from {{ rows().length }})</span>
+          }
         </div>
         <div class="pager__controls">
           <label class="pager__size">

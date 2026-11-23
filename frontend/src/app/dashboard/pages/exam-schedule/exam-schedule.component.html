@@ -5,12 +5,31 @@
     <div>
       <h1 class="page__title">Exam Schedule</h1>
       <div class="summary">
-        <span>Total: {{ totalRecord() }}</span>
-        <span>UG: {{ ugCount() }}</span>
-        <span>PG: {{ pgCount() }}</span>
+        <span>Total: {{ visibleTotal() }}</span>
+        <span>UG: {{ visibleUg() }}</span>
+        <span>PG: {{ visiblePg() }}</span>
+        @if (searchQuery().trim()) {
+          <span class="summary__muted">of {{ totalRecord() }}</span>
+        }
       </div>
     </div>
     <div class="toolbar">
+      <label class="field field--search">
+        <span class="field__label">Search</span>
+        <div class="search-box">
+          <input
+            type="text"
+            class="field__control"
+            [ngModel]="searchQuery()"
+            (ngModelChange)="onSearchChange($event)"
+            placeholder="Search any column…"
+            autocomplete="off"
+          />
+          @if (searchQuery()) {
+            <button type="button" class="search-box__clear" (click)="clearSearch()" aria-label="Clear search">×</button>
+          }
+        </div>
+      </label>
       <label class="field">
         <span class="field__label">Exam date</span>
         <select
@@ -38,10 +57,24 @@
           <option value="pg">PG</option>
         </select>
       </label>
-      <button type="button" class="btn btn--excel" (click)="exportExcel()" [disabled]="!rows().length || loading()">
+      <label class="field field--subject">
+        <span class="field__label">Subject</span>
+        <select
+          class="field__control"
+          [ngModel]="selectedSubject()"
+          (ngModelChange)="onSubjectChange($event)"
+          [disabled]="loading() || !subjects().length"
+        >
+          <option value="all">All</option>
+          @for (s of subjects(); track s) {
+            <option [value]="s">{{ s }}</option>
+          }
+        </select>
+      </label>
+      <button type="button" class="btn btn--excel" (click)="exportExcel()" [disabled]="!filteredRows().length || loading()">
         Export Excel
       </button>
-      <button type="button" class="btn btn--pdf" (click)="downloadPdf()" [disabled]="!rows().length || loading()">
+      <button type="button" class="btn btn--pdf" (click)="downloadPdf()" [disabled]="!filteredRows().length || loading()">
         Download PDF
       </button>
     </div>
@@ -70,7 +103,7 @@
           </tr>
         </thead>
         <tbody>
-          @for (row of rows(); track row.sNo + '-' + (row.paperId || '') + '-' + row.source + '-' + row.examDate) {
+          @for (row of filteredRows(); track row.sNo + '-' + (row.paperId || '') + '-' + row.source + '-' + row.examDate) {
             <tr>
               <td>{{ row.sNo }}</td>
               <td>{{ row.examDate || '—' }}</td>
@@ -86,7 +119,13 @@
             </tr>
           } @empty {
             <tr>
-              <td colspan="9" class="empty">No papers scheduled for this filter.</td>
+              <td colspan="9" class="empty">
+                {{
+                  searchQuery().trim() || selectedSubject() !== 'all'
+                    ? 'No matching papers for this filter.'
+                    : 'No papers scheduled for this filter.'
+                }}
+              </td>
             </tr>
           }
         </tbody>

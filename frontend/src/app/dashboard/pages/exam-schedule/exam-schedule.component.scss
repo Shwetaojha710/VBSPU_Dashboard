@@ -79,6 +79,48 @@
   color: var(--color-text-secondary);
 }
 
+.summary__muted {
+  opacity: 0.75;
+}
+
+.field--search {
+  min-width: 220px;
+}
+
+.field--subject .field__control {
+  min-width: 260px;
+  max-width: 360px;
+}
+
+.search-box {
+  position: relative;
+}
+
+.search-box .field__control {
+  padding-right: 28px;
+  min-width: 220px;
+}
+
+.search-box .field__control::-webkit-search-cancel-button {
+  -webkit-appearance: none;
+  appearance: none;
+  display: none;
+}
+
+.search-box__clear {
+  position: absolute;
+  top: 50%;
+  right: 6px;
+  transform: translateY(-50%);
+  border: 0;
+  background: transparent;
+  color: #667085;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 2px 6px;
+}
+
 .btn {
   border: 0;
   border-radius: 6px;

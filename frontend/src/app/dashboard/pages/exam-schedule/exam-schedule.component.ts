@@ -1,5 +1,5 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { environment } from '../../../../environments/environment';
@@ -42,13 +42,39 @@ export class ExamScheduleComponent implements OnInit {
   protected readonly dates = signal<string[]>([]);
   protected readonly selectedDate = signal('all');
   protected readonly level = signal<'all' | 'ug' | 'pg'>('all');
+  protected readonly selectedSubject = signal('all');
   protected readonly rows = signal<ScheduleRow[]>([]);
+  protected readonly searchQuery = signal('');
   protected readonly totalRecord = signal(0);
   protected readonly ugCount = signal(0);
   protected readonly pgCount = signal(0);
   protected readonly loadingDates = signal(true);
   protected readonly loading = signal(false);
   protected readonly error = signal('');
+
+  protected readonly subjects = computed(() => {
+    const set = new Set<string>();
+    for (const r of this.rows()) {
+      const s = (r.subject ?? '').trim();
+      if (s) set.add(s);
+    }
+    return [...set].sort((a, b) => a.localeCompare(b));
+  });
+
+  protected readonly filteredRows = computed(() => {
+    const q = this.searchQuery().trim().toLowerCase();
+    const subject = this.selectedSubject();
+    let list = this.rows();
+    if (subject !== 'all') {
+      list = list.filter((r) => (r.subject ?? '').trim() === subject);
+    }
+    if (!q) return list;
+    return list.filter((r) => rowMatchesQuery(r, q));
+  });
+
+  protected readonly visibleTotal = computed(() => this.filteredRows().length);
+  protected readonly visibleUg = computed(() => this.filteredRows().filter((r) => r.level === 'UG').length);
+  protected readonly visiblePg = computed(() => this.filteredRows().filter((r) => r.level === 'PG').length);
 
   ngOnInit(): void {
     this.http.get<{ dates: string[] }>(`${environment.apiUrl}/dashboard/exam-schedule/dates`).subscribe({
@@ -82,9 +108,23 @@ export class ExamScheduleComponent implements OnInit {
     this.loadSchedule();
   }
 
+  protected onSubjectChange(value: string): void {
+    this.selectedSubject.set(value || 'all');
+  }
+
+  protected onSearchChange(value: string): void {
+    this.searchQuery.set(value);
+  }
+
+  protected clearSearch(): void {
+    this.searchQuery.set('');
+  }
+
   protected loadSchedule(): void {
     this.loading.set(true);
     this.error.set('');
+    this.searchQuery.set('');
+    this.selectedSubject.set('all');
     const date = this.selectedDate() || 'all';
     const params = new HttpParams().set('date', date).set('level', this.level());
     this.http.get<ScheduleResponse>(`${environment.apiUrl}/dashboard/exam-schedule`, { params }).subscribe({
@@ -107,7 +147,7 @@ export class ExamScheduleComponent implements OnInit {
   }
 
   protected exportExcel(): void {
-    const list = this.rows();
+    const list = this.filteredRows();
     if (!list.length) {
       this.error.set('No rows to export.');
       return;
@@ -149,13 +189,32 @@ export class ExamScheduleComponent implements OnInit {
   }
 
   protected downloadPdf(): void {
-    const list = this.rows();
+    const list = this.filteredRows();
     if (!list.length) {
       this.error.set('No rows to download as PDF.');
       return;
     }
     printHtml(buildSchedulePrintHtml(list, this.selectedDate(), this.level()));
   }
+}
+
+function rowMatchesQuery(row: ScheduleRow, q: string): boolean {
+  const haystack = [
+    row.sNo,
+    row.examDate,
+    row.level,
+    row.source,
+    row.course,
+    row.subject,
+    row.paperId,
+    row.paperName,
+    row.meeting,
+    row.timing,
+    row.meetingName
+  ]
+    .map((v) => String(v ?? '').toLowerCase())
+    .join(' ');
+  return haystack.includes(q);
 }
 
 function localIsoDate(): string {

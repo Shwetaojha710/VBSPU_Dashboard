@@ -61,6 +61,32 @@
   }
 }
 
+.field--search {
+  grid-column: span 2;
+}
+
+.search-box {
+  position: relative;
+}
+
+.search-box input {
+  padding-right: 28px;
+}
+
+.search-box__clear {
+  position: absolute;
+  top: 50%;
+  right: 6px;
+  transform: translateY(-50%);
+  border: 0;
+  background: transparent;
+  color: #667085;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 2px 6px;
+}
+
 .filters__actions {
   display: flex;
   flex-wrap: wrap;

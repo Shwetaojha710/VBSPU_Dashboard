@@ -78,12 +78,33 @@ export class ExamAttendanceComponent implements OnInit {
   protected readonly loadingMeta = signal(true);
   protected readonly loading = signal(false);
   protected readonly error = signal('');
+  protected readonly searchQuery = signal('');
   protected readonly page = signal(1);
   protected readonly pageSize = signal(25);
   protected readonly pageSizeOptions = [25, 50, 100];
 
+  protected readonly filteredRows = computed(() => {
+    const q = this.searchQuery().trim().toLowerCase();
+    const list = this.rows();
+    if (!q) return list;
+    return list.filter((r) => attendanceRowMatches(r, q));
+  });
+
+  protected readonly filteredSummary = computed(() => {
+    const list = this.filteredRows();
+    return {
+      totalCentres: list.length,
+      completed: list.filter((r) => r.status === 'Completed').length,
+      partial: list.filter((r) => r.status === 'Partial').length,
+      pending: list.filter((r) => r.status === 'Pending').length,
+      totalStudent: list.reduce((n, r) => n + r.totalStudent, 0),
+      totalFeed: list.reduce((n, r) => n + r.totalFeed, 0),
+      totalNotFeed: list.reduce((n, r) => n + r.totalNotFeed, 0)
+    };
+  });
+
   protected readonly totalPages = computed(() => {
-    const total = this.rows().length;
+    const total = this.filteredRows().length;
     const size = this.pageSize();
     return total === 0 ? 1 : Math.ceil(total / size);
   });
@@ -92,17 +113,17 @@ export class ExamAttendanceComponent implements OnInit {
     const size = this.pageSize();
     const current = Math.min(this.page(), this.totalPages());
     const start = (current - 1) * size;
-    return this.rows().slice(start, start + size);
+    return this.filteredRows().slice(start, start + size);
   });
 
   protected readonly pageStart = computed(() => {
-    if (!this.rows().length) return 0;
+    if (!this.filteredRows().length) return 0;
     return (Math.min(this.page(), this.totalPages()) - 1) * this.pageSize() + 1;
   });
 
   protected readonly pageEnd = computed(() => {
-    if (!this.rows().length) return 0;
-    return Math.min(this.pageStart() + this.pageSize() - 1, this.rows().length);
+    if (!this.filteredRows().length) return 0;
+    return Math.min(this.pageStart() + this.pageSize() - 1, this.filteredRows().length);
   });
 
   protected filters: AttendanceFilters = {
@@ -159,6 +180,16 @@ export class ExamAttendanceComponent implements OnInit {
     this.loadReport();
   }
 
+  protected onSearchChange(value: string): void {
+    this.searchQuery.set(value);
+    this.page.set(1);
+  }
+
+  protected clearSearch(): void {
+    this.searchQuery.set('');
+    this.page.set(1);
+  }
+
   protected search(): void {
     this.page.set(1);
     this.loadReport();
@@ -166,6 +197,7 @@ export class ExamAttendanceComponent implements OnInit {
 
   private clearList(): void {
     this.rows.set([]);
+    this.searchQuery.set('');
     this.summary.set({
       totalCentres: 0,
       completed: 0,
@@ -191,6 +223,7 @@ export class ExamAttendanceComponent implements OnInit {
     };
     this.page.set(1);
     this.pageSize.set(25);
+    this.searchQuery.set('');
     this.loadMeetings(true);
   }
 
@@ -214,7 +247,7 @@ export class ExamAttendanceComponent implements OnInit {
   }
 
   protected exportExcel(): void {
-    const list = this.rows();
+    const list = this.filteredRows();
     if (!list.length) {
       this.error.set('No rows to export.');
       return;
@@ -292,6 +325,7 @@ export class ExamAttendanceComponent implements OnInit {
     this.http.get<AttendanceResponse>(`${environment.apiUrl}/dashboard/exam-attendance`, { params }).subscribe({
       next: (res) => {
         this.rows.set(res.rows ?? []);
+        this.searchQuery.set('');
         this.page.set(1);
         this.summary.set(
           res.summary ?? {
@@ -333,4 +367,23 @@ function localIsoDate(): string {
 function csv(value: unknown): string {
   const s = value == null ? '' : String(value);
   return `"${s.replace(/"/g, '""')}"`;
+}
+
+function attendanceRowMatches(row: AttendanceRow, q: string): boolean {
+  const haystack = [
+    row.sNo,
+    row.date,
+    row.meeting,
+    row.centerCode,
+    row.centreName,
+    row.managerName,
+    row.managerMobile,
+    row.totalStudent,
+    row.totalFeed,
+    row.totalNotFeed,
+    row.status
+  ]
+    .map((v) => String(v ?? '').toLowerCase())
+    .join(' ');
+  return haystack.includes(q);
 }
