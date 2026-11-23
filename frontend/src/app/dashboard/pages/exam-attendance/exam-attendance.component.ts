@@ -1,5 +1,5 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { environment } from '../../../../environments/environment';
@@ -78,6 +78,32 @@ export class ExamAttendanceComponent implements OnInit {
   protected readonly loadingMeta = signal(true);
   protected readonly loading = signal(false);
   protected readonly error = signal('');
+  protected readonly page = signal(1);
+  protected readonly pageSize = signal(25);
+  protected readonly pageSizeOptions = [25, 50, 100];
+
+  protected readonly totalPages = computed(() => {
+    const total = this.rows().length;
+    const size = this.pageSize();
+    return total === 0 ? 1 : Math.ceil(total / size);
+  });
+
+  protected readonly pagedRows = computed(() => {
+    const size = this.pageSize();
+    const current = Math.min(this.page(), this.totalPages());
+    const start = (current - 1) * size;
+    return this.rows().slice(start, start + size);
+  });
+
+  protected readonly pageStart = computed(() => {
+    if (!this.rows().length) return 0;
+    return (Math.min(this.page(), this.totalPages()) - 1) * this.pageSize() + 1;
+  });
+
+  protected readonly pageEnd = computed(() => {
+    if (!this.rows().length) return 0;
+    return Math.min(this.pageStart() + this.pageSize() - 1, this.rows().length);
+  });
 
   protected filters: AttendanceFilters = {
     courseTypeId: 1,
@@ -112,6 +138,7 @@ export class ExamAttendanceComponent implements OnInit {
   }
 
   protected search(): void {
+    this.page.set(1);
     this.loadReport();
   }
 
@@ -126,7 +153,28 @@ export class ExamAttendanceComponent implements OnInit {
       centerCode: '',
       status: 'all'
     };
+    this.page.set(1);
+    this.pageSize.set(25);
     this.loadMeetings(true);
+  }
+
+  protected onPageSizeChange(value: string | number): void {
+    this.pageSize.set(Number(value) || 25);
+    this.page.set(1);
+  }
+
+  protected goToPage(page: number): void {
+    const max = this.totalPages();
+    const next = Math.max(1, Math.min(page, max));
+    this.page.set(next);
+  }
+
+  protected prevPage(): void {
+    this.goToPage(this.page() - 1);
+  }
+
+  protected nextPage(): void {
+    this.goToPage(this.page() + 1);
   }
 
   protected exportExcel(): void {
@@ -208,6 +256,7 @@ export class ExamAttendanceComponent implements OnInit {
     this.http.get<AttendanceResponse>(`${environment.apiUrl}/dashboard/exam-attendance`, { params }).subscribe({
       next: (res) => {
         this.rows.set(res.rows ?? []);
+        this.page.set(1);
         this.summary.set(
           res.summary ?? {
             totalCentres: 0,
@@ -223,6 +272,7 @@ export class ExamAttendanceComponent implements OnInit {
       },
       error: () => {
         this.rows.set([]);
+        this.page.set(1);
         this.summary.set({
           totalCentres: 0,
           completed: 0,

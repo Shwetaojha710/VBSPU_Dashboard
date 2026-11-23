@@ -107,7 +107,7 @@
           </tr>
         </thead>
         <tbody>
-          @for (row of rows(); track row.sNo + '-' + (row.centerCode || '') + '-' + (row.meetingId || 0)) {
+          @for (row of pagedRows(); track row.sNo + '-' + (row.centerCode || '') + '-' + (row.meetingId || 0)) {
             <tr [attr.data-status]="row.status">
               <td>{{ row.sNo }}</td>
               <td>{{ row.date || '—' }}</td>
@@ -131,5 +131,35 @@
         </tbody>
       </table>
     </div>
+
+    @if (rows().length) {
+      <div class="pager">
+        <div class="pager__info">
+          Showing {{ pageStart() }}–{{ pageEnd() }} of {{ rows().length }}
+        </div>
+        <div class="pager__controls">
+          <label class="pager__size">
+            <span>Rows</span>
+            <select [ngModel]="pageSize()" (ngModelChange)="onPageSizeChange($event)">
+              @for (size of pageSizeOptions; track size) {
+                <option [ngValue]="size">{{ size }}</option>
+              }
+            </select>
+          </label>
+          <button type="button" class="btn btn--ghost" (click)="prevPage()" [disabled]="page() <= 1">
+            Previous
+          </button>
+          <span class="pager__page">Page {{ page() }} / {{ totalPages() }}</span>
+          <button
+            type="button"
+            class="btn btn--ghost"
+            (click)="nextPage()"
+            [disabled]="page() >= totalPages()"
+          >
+            Next
+          </button>
+        </div>
+      </div>
+    }
   }
 </section>
