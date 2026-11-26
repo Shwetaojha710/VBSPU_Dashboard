@@ -4,6 +4,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } 
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { environment } from '../../../../environments/environment';
+import { IconComponent } from '../../components/icon/icon.component';
 
 interface ScheduleRow {
   sNo: number;
@@ -35,7 +36,7 @@ interface ScheduleResponse {
 /** Exam Schedule — Ug1/UG3/UG5/PG1/Pg5 UNION ALL with exam-date + UG/PG filters. */
 @Component({
   selector: 'app-exam-schedule',
-  imports: [RouterLink, FormsModule, DecimalPipe],
+  imports: [RouterLink, FormsModule, DecimalPipe, IconComponent],
   templateUrl: './exam-schedule.component.html',
   styleUrl: './exam-schedule.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush

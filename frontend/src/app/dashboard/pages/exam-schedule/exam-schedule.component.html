@@ -2,35 +2,47 @@
   @if (busy()) {
     <div class="loader" role="status" aria-live="polite">
       <span class="loader__spin" aria-hidden="true"></span>
-      <p>{{ downloadingAll() ? 'Preparing PDF…' : 'Loading schedule…' }}</p>
+      <p>
+        {{
+          downloadingAll() || downloadingSubjectWise() ? 'Preparing PDF…' : 'Loading schedule…'
+        }}
+      </p>
     </div>
   }
+
   <a class="page__link" routerLink="/">← Back to Overview</a>
 
-  <header class="page__header">
+  <header class="page__intro">
     <div>
       <h1 class="page__title">Exam Schedule</h1>
-      <p class="page__sub">{{ selectedDate() === 'all' ? 'All dates' : formatDate(selectedDate()) }}</p>
-      <div class="stats">
-        <div class="stat stat--papers">
-          <span>Total papers</span>
-          <strong>{{ visibleTotal() }}</strong>
-        </div>
-        <div class="stat stat--ug">
-          <span>UG</span>
-          <strong>{{ visibleUg() }}</strong>
-        </div>
-        <div class="stat stat--pg">
-          <span>PG</span>
-          <strong>{{ visiblePg() }}</strong>
-        </div>
-        <div class="stat stat--students">
-          <span>Total students</span>
-          <strong>{{ visibleStudents() | number }}</strong>
-        </div>
-      </div>
+      <p class="page__sub">
+        {{ selectedDate() === 'all' ? 'All exam dates' : formatDate(selectedDate()) }}
+        · filter, search, and export papers
+      </p>
     </div>
-    <div class="toolbar">
+  </header>
+
+  <div class="stats" aria-label="Schedule summary">
+    <div class="stat stat--papers">
+      <span class="stat__label">Total papers</span>
+      <strong class="stat__value">{{ visibleTotal() | number }}</strong>
+    </div>
+    <div class="stat stat--ug">
+      <span class="stat__label">UG</span>
+      <strong class="stat__value">{{ visibleUg() | number }}</strong>
+    </div>
+    <div class="stat stat--pg">
+      <span class="stat__label">PG</span>
+      <strong class="stat__value">{{ visiblePg() | number }}</strong>
+    </div>
+    <div class="stat stat--students">
+      <span class="stat__label">Total students</span>
+      <strong class="stat__value">{{ visibleStudents() | number }}</strong>
+    </div>
+  </div>
+
+  <div class="controls">
+    <div class="filters">
       <label class="field field--search">
         <span class="field__label">Search</span>
         <input
@@ -84,89 +96,120 @@
           }
         </select>
       </label>
-      <button type="button" class="btn btn--excel" (click)="exportExcel()" [disabled]="!filteredRows().length || loading()">
-        Export Excel
-      </button>
-      <button type="button" class="btn btn--pdf" (click)="downloadPdf()" [disabled]="!filteredRows().length || loading()">
-        Download PDF
+    </div>
+
+    <div class="actions" role="group" aria-label="Export actions">
+      <button
+        type="button"
+        class="icon-btn icon-btn--excel"
+        (click)="exportExcel()"
+        [disabled]="!filteredRows().length || loading()"
+        title="Export Excel"
+        aria-label="Export Excel"
+      >
+        <app-icon [name]="'file-spreadsheet'" [size]="18" [strokeWidth]="1.8" />
       </button>
       <button
         type="button"
-        class="btn btn--pdf-subject"
+        class="icon-btn icon-btn--pdf"
+        (click)="downloadPdf()"
+        [disabled]="!filteredRows().length || loading()"
+        title="Download PDF"
+        aria-label="Download PDF"
+      >
+        <app-icon [name]="'file-text'" [size]="18" [strokeWidth]="1.8" />
+      </button>
+      <button
+        type="button"
+        class="icon-btn icon-btn--subject"
         (click)="downloadSubjectWisePdf()"
         [disabled]="loading() || downloadingSubjectWise() || downloadingAll()"
+        [title]="downloadingSubjectWise() ? 'Preparing…' : 'Download PDF Subject Wise'"
+        [attr.aria-label]="downloadingSubjectWise() ? 'Preparing subject-wise PDF' : 'Download PDF Subject Wise'"
       >
-        {{ downloadingSubjectWise() ? 'Preparing…' : 'Download PDF Subject Wise' }}
+        <app-icon [name]="'layers'" [size]="18" [strokeWidth]="1.8" />
       </button>
       <button
         type="button"
-        class="btn btn--pdf-all"
+        class="icon-btn icon-btn--all"
         (click)="downloadAllDatesPdf()"
         [disabled]="loading() || downloadingAll() || downloadingSubjectWise()"
+        [title]="downloadingAll() ? 'Preparing…' : 'Download All Dates PDF'"
+        [attr.aria-label]="downloadingAll() ? 'Preparing all-dates PDF' : 'Download All Dates PDF'"
       >
-        {{ downloadingAll() ? 'Preparing…' : 'Download All Dates PDF' }}
+        <app-icon [name]="'calendar'" [size]="18" [strokeWidth]="1.8" />
       </button>
     </div>
-  </header>
+  </div>
 
   @if (error()) {
     <p class="page__error" role="alert">{{ error() }}</p>
   }
 
   @if (!(loading() || loadingDates())) {
-    <div class="table-wrap">
-      <table class="grid">
-        <thead>
-          <tr>
-            <th>S.No.</th>
-            <th>Date</th>
-            <th>Level</th>
-            <th>Session</th>
-            <th>Course</th>
-            <th>Subject</th>
-            <th>Paper ID</th>
-            <th>Total Students</th>
-            <th>Paper Name</th>
-            <th>Meeting / Time</th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (row of pagedRows(); track row.sNo + '-' + (row.paperId || '') + '-' + row.source + '-' + row.examDate) {
+    <div class="table-card">
+      <div class="table-wrap">
+        <table class="grid">
+          <thead>
             <tr>
-              <td>{{ row.sNo }}</td>
-              <td>{{ formatDate(row.examDate) }}</td>
-              <td>
-                <span class="badge" [attr.data-level]="row.level">{{ row.level }}</span>
-              </td>
-              <td>{{ row.session || '—' }}</td>
-              <td>{{ row.course || '—' }}</td>
-              <td>{{ row.subject || '—' }}</td>
-              <td>{{ row.paperId || '—' }}</td>
-              <td class="num">{{ row.totalStudents ?? 0 }}</td>
-              <td>{{ row.paperName || '—' }}</td>
-              <td>{{ row.meeting || row.timing || '—' }}</td>
+              <th>S.No.</th>
+              <th>Date</th>
+              <th>Level</th>
+              <th>Session</th>
+              <th>Course</th>
+              <th>Subject</th>
+              <th>Paper ID</th>
+              <th>Total Students</th>
+              <th>Paper Name</th>
+              <th>Meeting / Time</th>
             </tr>
-          } @empty {
-            <tr>
-              <td colspan="10" class="empty">
-                {{
-                  searchQuery().trim() || selectedSubject() !== 'all'
-                    ? 'No matching papers for this filter.'
-                    : 'No papers scheduled for this filter.'
-                }}
-              </td>
-            </tr>
-          }
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            @for (row of pagedRows(); track row.sNo + '-' + (row.paperId || '') + '-' + row.source + '-' + row.examDate) {
+              <tr>
+                <td class="num">{{ row.sNo }}</td>
+                <td>{{ formatDate(row.examDate) }}</td>
+                <td>
+                  <span class="badge" [attr.data-level]="row.level">{{ row.level }}</span>
+                </td>
+                <td>{{ row.session || '—' }}</td>
+                <td>{{ row.course || '—' }}</td>
+                <td>{{ row.subject || '—' }}</td>
+                <td class="mono">{{ row.paperId || '—' }}</td>
+                <td class="num">{{ (row.totalStudents ?? 0) | number }}</td>
+                <td class="paper">{{ row.paperName || '—' }}</td>
+                <td class="meeting">{{ row.meeting || row.timing || '—' }}</td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="10" class="empty">
+                  {{
+                    searchQuery().trim() || selectedSubject() !== 'all'
+                      ? 'No matching papers for this filter.'
+                      : 'No papers scheduled for this filter.'
+                  }}
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
     </div>
+
     @if (filteredRows().length > pageSize) {
       <div class="pager">
-        <span>Showing {{ (page() - 1) * pageSize + 1 }}–{{ page() * pageSize > filteredRows().length ? filteredRows().length : page() * pageSize }} of {{ filteredRows().length }}</span>
+        <span>
+          Showing {{ (page() - 1) * pageSize + 1 }}–{{
+            page() * pageSize > filteredRows().length ? filteredRows().length : page() * pageSize
+          }}
+          of {{ filteredRows().length | number }}
+        </span>
         <div class="pager__actions">
           <button type="button" class="btn btn--page" (click)="prevPage()" [disabled]="page() <= 1">Previous</button>
           <span>Page {{ page() }} / {{ totalPages() }}</span>
-          <button type="button" class="btn btn--page" (click)="nextPage()" [disabled]="page() >= totalPages()">Next</button>
+          <button type="button" class="btn btn--page" (click)="nextPage()" [disabled]="page() >= totalPages()">
+            Next
+          </button>
         </div>
       </div>
     }

@@ -1,5 +1,5 @@
 import { HttpClient } from '@angular/common/http';
-import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { environment } from '../../../../environments/environment';
@@ -52,6 +52,8 @@ export class ExamSupervisionComponent implements OnInit {
   protected readonly loadingDates = signal(true);
   protected readonly loadingReport = signal(false);
   protected readonly error = signal('');
+
+  protected readonly busy = computed(() => this.loadingDates() || this.loadingReport());
 
   ngOnInit(): void {
     this.http.get<{ dates: string[] }>(`${environment.apiUrl}/dashboard/exam-supervision/dates`).subscribe({

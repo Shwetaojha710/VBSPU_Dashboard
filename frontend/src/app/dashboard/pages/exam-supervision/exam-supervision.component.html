@@ -1,4 +1,11 @@
-<section class="page" aria-label="Exam supervision report">
+<section class="page" aria-label="Exam supervision report" [class.page--busy]="busy()">
+  @if (busy()) {
+    <div class="loader" role="status" aria-live="polite">
+      <span class="loader__spin" aria-hidden="true"></span>
+      <p>{{ loadingDates() ? 'Loading exam dates…' : 'Loading report…' }}</p>
+    </div>
+  }
+
   <a class="page__link" routerLink="/" fragment="exam-status">← Back to Overview</a>
 
   <header class="page__header">
@@ -15,7 +22,7 @@
           class="field__control"
           [ngModel]="selectedDate()"
           (ngModelChange)="onDateChange($event)"
-          [disabled]="loadingDates() || !dates().length"
+          [disabled]="busy() || !dates().length"
         >
           @if (!dates().length) {
             <option value="">No exam dates found</option>
@@ -29,7 +36,7 @@
         type="button"
         class="btn"
         (click)="downloadPdf()"
-        [disabled]="!report() || loadingReport()"
+        [disabled]="!report() || busy()"
       >
         Download PDF
       </button>
@@ -40,9 +47,7 @@
     <p class="page__error" role="alert">{{ error() }}</p>
   }
 
-  @if (loadingReport()) {
-    <p class="page__text">Loading report…</p>
-  } @else {
+  @if (!busy()) {
     @if (report(); as r) {
       <div class="sheet">
         <h2 class="sheet__uni">{{ r.university }}</h2>

@@ -38,7 +38,10 @@ export type IconName =
   | 'bar-chart'
   | 'calendar'
   | 'book-open'
-  | 'grid-squares';
+  | 'grid-squares'
+  | 'download'
+  | 'file-spreadsheet'
+  | 'file';
 
 export interface NavItem {
   label: string;
