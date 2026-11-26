@@ -1,0 +1,212 @@
+<section class="page" aria-label="Copy scan status" [class.page--busy]="busy()">
+  @if (busy()) {
+    <div class="loader" role="status" aria-live="polite">
+      <span class="loader__spin" aria-hidden="true"></span>
+      <p>Loading copy scan status…</p>
+    </div>
+  }
+
+  <a class="page__link" routerLink="/">← Back to Overview</a>
+  <header class="page__header">
+    <div>
+      <h1 class="page__title">Copy Scan Status</h1>
+      <p class="page__sub">
+        Click any stage to open live lot / copy details. Pipeline: barcode → allot → receive → flap / OMR / award.
+      </p>
+    </div>
+    <div class="toolbar">
+      <label class="field">
+        <span class="field__label">Year</span>
+        <select
+          class="field__control"
+          [ngModel]="year()"
+          (ngModelChange)="onYearChange($event)"
+          [disabled]="loadingFilters()"
+        >
+          @for (y of years(); track y) {
+            <option [value]="y">{{ y }}</option>
+          }
+        </select>
+      </label>
+      <label class="field">
+        <span class="field__label">UG / PG</span>
+        <select
+          class="field__control"
+          [ngModel]="level()"
+          (ngModelChange)="onLevelChange($event)"
+          [disabled]="loading()"
+        >
+          <option value="all">All</option>
+          <option value="ug">UG</option>
+          <option value="pg">PG</option>
+        </select>
+      </label>
+    </div>
+  </header>
+
+  @if (error()) {
+    <p class="page__error" role="alert">{{ error() }}</p>
+  }
+
+  @if (funnel(); as f) {
+    <div class="funnel" aria-label="Conversion overview">
+      <div class="funnel__item">
+        <span>Coded → Allotted</span>
+        <strong>{{ f.allottedPct == null ? '—' : f.allottedPct + '%' }}</strong>
+      </div>
+      <div class="funnel__item">
+        <span>Allotted → Received</span>
+        <strong>{{ f.receivedPct == null ? '—' : f.receivedPct + '%' }}</strong>
+      </div>
+      <div class="funnel__item">
+        <span>Received → OMR</span>
+        <strong>{{ f.omrPct == null ? '—' : f.omrPct + '%' }}</strong>
+      </div>
+      <div class="funnel__item">
+        <span>Received → Award</span>
+        <strong>{{ f.awardPct == null ? '—' : f.awardPct + '%' }}</strong>
+      </div>
+    </div>
+  }
+
+  @if (stageViews().length) {
+    <ol class="stages">
+      @for (stage of stageViews(); track stage.key) {
+        <li>
+          <button
+            type="button"
+            class="stage"
+            [attr.data-tone]="stage.tone"
+            [class.stage--muted]="!stage.available"
+            [class.stage--active]="selectedStage() === stage.key"
+            [disabled]="!stage.available"
+            (click)="openStage(stage)"
+          >
+            <div class="stage__top">
+              <span class="stage__step">{{ stage.step }}</span>
+              <div class="stage__title-wrap">
+                <h2 class="stage__title">{{ stage.title }}</h2>
+                <p class="stage__hint">{{ stage.hint }}</p>
+              </div>
+              <p class="stage__value">
+                @if (stage.available) {
+                  {{ stage.value | number }}
+                } @else {
+                  N/A
+                }
+              </p>
+            </div>
+
+            <div class="stage__bar" aria-hidden="true">
+              <span
+                class="stage__bar-fill"
+                [style.width]="stage.available ? barWidth(stage.value, stage.base || stage.value) : '0%'"
+              ></span>
+            </div>
+
+            @if (stage.secondary) {
+              <div class="stage__extra">
+                <span>{{ stage.secondary.label }}</span>
+                <strong>{{ stage.secondary.value | number }}</strong>
+              </div>
+            }
+
+            @if (stage.available) {
+              <span class="stage__cta">{{ selectedStage() === stage.key ? 'Hide details' : 'View details' }}</span>
+            }
+          </button>
+        </li>
+      }
+    </ol>
+  }
+
+  @if (selectedStageView(); as active) {
+    <section class="detail" aria-label="Stage details">
+      <header class="detail__head">
+        <div>
+          <h2>{{ active.step }}. {{ active.title }}</h2>
+          <p>
+            {{ detailTotalRows() | number }} records
+            @if (detailTotalCopies()) {
+              · {{ detailTotalCopies() | number }} copies
+            }
+          </p>
+        </div>
+        <div class="detail__actions">
+          <label class="field field--search">
+            <span class="field__label">Search</span>
+            <input
+              class="field__control"
+              type="search"
+              [value]="detailSearch()"
+              (change)="onDetailSearch($any($event.target).value)"
+              (keyup.enter)="onDetailSearch($any($event.target).value)"
+              placeholder="Lot / course / paper / barcode…"
+            />
+          </label>
+          <button type="button" class="btn" (click)="closeDetails()">Close</button>
+        </div>
+      </header>
+
+      @if (detailMessage()) {
+        <p class="page__hint">{{ detailMessage() }}</p>
+      }
+      @if (detailError()) {
+        <p class="page__error" role="alert">{{ detailError() }}</p>
+      }
+
+      <div class="detail__body" [class.detail__body--busy]="detailLoading()">
+        @if (detailLoading()) {
+          <div class="detail__loader">Loading details…</div>
+        }
+        <div class="table-wrap">
+          <table class="grid">
+            <thead>
+              <tr>
+                <th>S.No.</th>
+                @for (col of detailColumns(); track col) {
+                  <th>{{ columnLabel(col) }}</th>
+                }
+              </tr>
+            </thead>
+            <tbody>
+              @for (row of detailRows(); track row.sNo + '-' + (row.lotNo || row.barcode || '')) {
+                <tr>
+                  <td>{{ row.sNo }}</td>
+                  @for (col of detailColumns(); track col) {
+                    <td>{{ cellValue(row, col) }}</td>
+                  }
+                </tr>
+              } @empty {
+                <tr>
+                  <td [attr.colspan]="detailColumns().length + 1" class="empty">
+                    No rows for this stage / filter.
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      @if (detailTotalRows() > detailPageSize) {
+        <div class="pager">
+          <span>Page {{ detailPage() }} / {{ detailTotalPages() }}</span>
+          <div class="pager__actions">
+            <button type="button" class="btn" (click)="prevDetailPage()" [disabled]="detailPage() <= 1 || detailLoading()">
+              Previous
+            </button>
+            <button
+              type="button"
+              class="btn"
+              (click)="nextDetailPage()"
+              [disabled]="detailPage() >= detailTotalPages() || detailLoading()"
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      }
+    </section>
+  }
+</section>

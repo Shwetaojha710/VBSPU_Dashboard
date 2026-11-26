@@ -5,7 +5,7 @@ const config = require('./index');
  * Lazily created SQL Server connection pool. The dashboard only reads data, so the
  * connection declares read-only intent; queries in this app are SELECT-only.
  */
-const poolFor = (settings, label) => {
+const poolFor = (settings, label, { readOnlyIntent = true } = {}) => {
   let poolPromise;
   return () => {
     if (!settings.server || !settings.database) {
@@ -19,7 +19,7 @@ const poolFor = (settings, label) => {
         user: settings.user,
         password: settings.password,
         // useUTC: false — the databases store local (IST) timestamps.
-        options: { encrypt: settings.encrypt, trustServerCertificate: true, readOnlyIntent: true, useUTC: false },
+        options: { encrypt: settings.encrypt, trustServerCertificate: true, readOnlyIntent, useUTC: false },
         pool: { max: 5, min: 0, idleTimeoutMillis: 30000 },
         connectionTimeout: 20000,
         // Dashboard queries scan multi-million-row tables on shared, often busy servers. They run
@@ -39,7 +39,10 @@ const poolFor = (settings, label) => {
 /** Main university database (DB_* in .env). */
 const getPool = poolFor(config.db, 'Database');
 
+/** Writable pool for allowance / verification updates (no read-only intent). */
+const getWritePool = poolFor(config.db, 'Database (write)', { readOnlyIntent: false });
+
 /** Second database, PU_2026: course-wise nominal rolls, marks and results (DB2_* in .env). */
 const getPool2 = poolFor(config.db2, 'Second database (DB2)');
 
-module.exports = { sql, getPool, getPool2 };
+module.exports = { sql, getPool, getWritePool, getPool2 };

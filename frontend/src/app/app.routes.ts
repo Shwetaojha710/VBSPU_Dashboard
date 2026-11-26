@@ -7,6 +7,9 @@ import { ExamSupervisionComponent } from './dashboard/pages/exam-supervision/exa
 import { ExamEvaluatorsComponent } from './dashboard/pages/exam-evaluators/exam-evaluators.component';
 import { ExamScheduleComponent } from './dashboard/pages/exam-schedule/exam-schedule.component';
 import { ExamAttendanceComponent } from './dashboard/pages/exam-attendance/exam-attendance.component';
+import { ExamRemunerationComponent } from './dashboard/pages/exam-remuneration/exam-remuneration.component';
+import { CopyScanStatusComponent } from './dashboard/pages/copy-scan-status/copy-scan-status.component';
+import { AttendanceVerificationSummaryComponent } from './dashboard/pages/attendance-verification-summary/attendance-verification-summary.component';
 import { OverviewComponent } from './dashboard/pages/overview/overview.component';
 import { SectionComponent } from './dashboard/pages/section/section.component';
 
@@ -38,6 +41,21 @@ export const routes: Routes = [
         path: 'exam-attendance',
         component: ExamAttendanceComponent,
         title: 'Exam Attendance – VBSPU Dashboard'
+      },
+      {
+        path: 'exam-remuneration',
+        component: ExamRemunerationComponent,
+        title: 'Examiner Remuneration Report – VBSPU Dashboard'
+      },
+      {
+        path: 'copy-scan-status',
+        component: CopyScanStatusComponent,
+        title: 'Copy Scan Status – VBSPU Dashboard'
+      },
+      {
+        path: 'attendance-verification-summary',
+        component: AttendanceVerificationSummaryComponent,
+        title: 'Attendance Verification Summary – VBSPU Dashboard'
       },
       { path: ':section', component: SectionComponent, title: 'VBSPU VC Dashboard' }
     ]

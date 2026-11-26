@@ -1,16 +1,33 @@
-<section class="page" aria-label="Exam schedule">
+<section class="page" aria-label="Exam schedule" [class.page--busy]="busy()">
+  @if (busy()) {
+    <div class="loader" role="status" aria-live="polite">
+      <span class="loader__spin" aria-hidden="true"></span>
+      <p>{{ downloadingAll() ? 'Preparing PDF…' : 'Loading schedule…' }}</p>
+    </div>
+  }
   <a class="page__link" routerLink="/">← Back to Overview</a>
 
   <header class="page__header">
     <div>
       <h1 class="page__title">Exam Schedule</h1>
-      <div class="summary">
-        <span>Total: {{ visibleTotal() }}</span>
-        <span>UG: {{ visibleUg() }}</span>
-        <span>PG: {{ visiblePg() }}</span>
-        @if (searchQuery().trim() || selectedSubject() !== 'all') {
-          <span class="summary__muted">of {{ totalRecord() }}</span>
-        }
+      <p class="page__sub">{{ selectedDate() === 'all' ? 'All dates' : formatDate(selectedDate()) }}</p>
+      <div class="stats">
+        <div class="stat stat--papers">
+          <span>Total papers</span>
+          <strong>{{ visibleTotal() }}</strong>
+        </div>
+        <div class="stat stat--ug">
+          <span>UG</span>
+          <strong>{{ visibleUg() }}</strong>
+        </div>
+        <div class="stat stat--pg">
+          <span>PG</span>
+          <strong>{{ visiblePg() }}</strong>
+        </div>
+        <div class="stat stat--students">
+          <span>Total students</span>
+          <strong>{{ visibleStudents() | number }}</strong>
+        </div>
       </div>
     </div>
     <div class="toolbar">
@@ -73,6 +90,14 @@
       <button type="button" class="btn btn--pdf" (click)="downloadPdf()" [disabled]="!filteredRows().length || loading()">
         Download PDF
       </button>
+      <button
+        type="button"
+        class="btn btn--pdf-all"
+        (click)="downloadAllDatesPdf()"
+        [disabled]="loading() || downloadingAll()"
+      >
+        {{ downloadingAll() ? 'Preparing…' : 'Download All Dates PDF' }}
+      </button>
     </div>
   </header>
 
@@ -80,42 +105,42 @@
     <p class="page__error" role="alert">{{ error() }}</p>
   }
 
-  @if (loading() || loadingDates()) {
-    <p class="page__text">Loading schedule…</p>
-  } @else {
+  @if (!(loading() || loadingDates())) {
     <div class="table-wrap">
       <table class="grid">
         <thead>
           <tr>
             <th>S.No.</th>
-            <th>Exam Date</th>
+            <th>Date</th>
             <th>Level</th>
-            <th>Source</th>
+            <th>Session</th>
             <th>Course</th>
             <th>Subject</th>
             <th>Paper ID</th>
+            <th>Total Students</th>
             <th>Paper Name</th>
             <th>Meeting / Time</th>
           </tr>
         </thead>
         <tbody>
-          @for (row of filteredRows(); track row.sNo + '-' + (row.paperId || '') + '-' + row.source + '-' + row.examDate) {
+          @for (row of pagedRows(); track row.sNo + '-' + (row.paperId || '') + '-' + row.source + '-' + row.examDate) {
             <tr>
               <td>{{ row.sNo }}</td>
-              <td>{{ row.examDate || '—' }}</td>
+              <td>{{ formatDate(row.examDate) }}</td>
               <td>
                 <span class="badge" [attr.data-level]="row.level">{{ row.level }}</span>
               </td>
-              <td>{{ row.source }}</td>
+              <td>{{ row.session || '—' }}</td>
               <td>{{ row.course || '—' }}</td>
               <td>{{ row.subject || '—' }}</td>
               <td>{{ row.paperId || '—' }}</td>
+              <td class="num">{{ row.totalStudents ?? 0 }}</td>
               <td>{{ row.paperName || '—' }}</td>
               <td>{{ row.meeting || row.timing || '—' }}</td>
             </tr>
           } @empty {
             <tr>
-              <td colspan="9" class="empty">
+              <td colspan="10" class="empty">
                 {{
                   searchQuery().trim() || selectedSubject() !== 'all'
                     ? 'No matching papers for this filter.'
@@ -127,5 +152,15 @@
         </tbody>
       </table>
     </div>
+    @if (filteredRows().length > pageSize) {
+      <div class="pager">
+        <span>Showing {{ (page() - 1) * pageSize + 1 }}–{{ page() * pageSize > filteredRows().length ? filteredRows().length : page() * pageSize }} of {{ filteredRows().length }}</span>
+        <div class="pager__actions">
+          <button type="button" class="btn btn--page" (click)="prevPage()" [disabled]="page() <= 1">Previous</button>
+          <span>Page {{ page() }} / {{ totalPages() }}</span>
+          <button type="button" class="btn btn--page" (click)="nextPage()" [disabled]="page() >= totalPages()">Next</button>
+        </div>
+      </div>
+    }
   }
 </section>

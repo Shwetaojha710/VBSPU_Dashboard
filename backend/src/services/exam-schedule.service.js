@@ -57,6 +57,14 @@ const clean = (value) => {
   return s || null;
 };
 
+const sessionOf = (source) => {
+  const key = String(source || '').toLowerCase();
+  if (key === 'ug1' || key === 'pg1') return 'I';
+  if (key === 'ug3') return 'III';
+  if (key === 'ug5' || key === 'pg5') return 'V';
+  return null;
+};
+
 const formatDate = (value) => {
   if (!value) return null;
   if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}/.test(value)) return value.slice(0, 10);
@@ -68,7 +76,7 @@ const formatDate = (value) => {
   return `${y}-${m}-${day}`;
 };
 
-const branchSelectSql = ({ level, source, table, dayExpr, courseTypeCol, timeExpr }) => `
+const branchSelectSql = ({ level, source, table, dayExpr, courseTypeCol, timeExpr }, dated) => `
   SELECT
     '${level}' AS levelType,
     '${source}' AS sourceTable,
@@ -83,9 +91,42 @@ const branchSelectSql = ({ level, source, table, dayExpr, courseTypeCol, timeExp
     ${timeExpr} AS timeText
   FROM ${table}
   WHERE ExamDate IS NOT NULL
+  ${dated ? 'AND CONVERT(varchar(10), ExamDate, 23) = @examDate' : ''}
 `;
 
-const unionSql = () => BRANCHES.map(branchSelectSql).join('\nUNION ALL\n');
+const unionSql = (dated) => BRANCHES.map((branch) => branchSelectSql(branch, dated)).join('\nUNION ALL\n');
+
+const scheduleCache = new Map();
+const studentCountCache = new Map();
+const SCHEDULE_TTL_MS = 90 * 1000;
+const COUNT_TTL_MS = 10 * 60 * 1000;
+
+const readCount = (code) => {
+  const hit = studentCountCache.get(code);
+  if (!hit) return undefined;
+  if (Date.now() - hit.at > COUNT_TTL_MS) {
+    studentCountCache.delete(code);
+    return undefined;
+  }
+  return hit.n;
+};
+
+const rememberCount = (code, n) => {
+  studentCountCache.set(code, { n, at: Date.now() });
+};
+
+const runPool = async (items, size, worker) => {
+  if (!items.length) return;
+  let cursor = 0;
+  const run = async () => {
+    while (cursor < items.length) {
+      const index = cursor;
+      cursor += 1;
+      await worker(items[index], index);
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(size, items.length) }, run));
+};
 
 const dateUnionSql = () =>
   BRANCHES.map(({ table }) => `SELECT CAST(ExamDate AS date) AS examDate FROM ${table} WHERE ExamDate IS NOT NULL`).join(
@@ -122,6 +163,10 @@ const getSchedule = async ({ date, level = 'all' } = {}) => {
     throw err;
   }
 
+  const cacheKey = `${allDates ? 'all' : day}|${levelKey}`;
+  const cached = scheduleCache.get(cacheKey);
+  if (cached && Date.now() - cached.at < SCHEDULE_TTL_MS) return cached.value;
+
   const pool = await getPool();
   const req = pool.request();
 
@@ -151,7 +196,7 @@ const getSchedule = async ({ date, level = 'all' } = {}) => {
       m.MeetingName AS meetingName,
       m.Timing AS meetingTiming
     FROM (
-      ${unionSql()}
+      ${unionSql(!allDates)}
     ) u
     LEFT JOIN dbo.MeetingMaster m ON m.MeetingId = u.meetingId
     WHERE 1 = 1
@@ -164,6 +209,82 @@ const getSchedule = async ({ date, level = 'all' } = {}) => {
       ISNULL(u.meetingId, 99),
       u.paperId
   `);
+
+  const paperCodes = [
+    ...new Set(
+      (result.recordset || [])
+        .map((r) => clean(r.paperId))
+        .filter(Boolean)
+    ),
+  ];
+  const studentCounts = new Map();
+  const missingCodes = [];
+  for (const code of paperCodes) {
+    const key = String(code).toUpperCase();
+    const cachedCount = readCount(key);
+    if (cachedCount === undefined) missingCodes.push(code);
+    else studentCounts.set(key, cachedCount);
+  }
+
+  const chunkSize = 100;
+  const chunks = [];
+  for (let i = 0; i < missingCodes.length; i += chunkSize) chunks.push(missingCodes.slice(i, i + chunkSize));
+
+  await runPool(chunks, 4, async (chunk) => {
+    const paperReq = pool.request();
+    const placeholders = chunk
+      .map((code, idx) => {
+        paperReq.input(`p${idx}`, sql.VarChar(50), code);
+        return `@p${idx}`;
+      })
+      .join(',');
+    const papers = await paperReq.query(`
+      SELECT PK_PaperID AS paperId, LTRIM(RTRIM(PaperCode)) AS paperCode
+      FROM dbo.PaperMaster WITH (NOLOCK)
+      WHERE PaperCode IN (${placeholders})
+    `);
+    const paperRows = papers.recordset || [];
+    const seen = new Set(paperRows.map((row) => String(row.paperCode).trim().toUpperCase()));
+    for (const code of chunk) {
+      const key = String(code).toUpperCase();
+      if (!seen.has(key)) {
+        studentCounts.set(key, 0);
+        rememberCount(key, 0);
+      }
+    }
+    if (!paperRows.length) return;
+
+    const idToCode = new Map();
+    const countReq = pool.request();
+    const idPlaceholders = paperRows
+      .map((row, idx) => {
+        countReq.input(`id${idx}`, sql.BigInt, row.paperId);
+        idToCode.set(String(row.paperId), String(row.paperCode).trim().toUpperCase());
+        return `@id${idx}`;
+      })
+      .join(',');
+    const counted = await countReq.query(`
+      SELECT EP.FK_PaperID AS paperId, COUNT(DISTINCT S.StudentId) AS totalStudents
+      FROM dbo.EVEN_SEM_PAPERS EP WITH (NOLOCK)
+      INNER JOIN dbo.Student_Data S WITH (NOLOCK)
+        ON S.RegistrationNo = EP.ExamFormNo
+       AND S.SessionId = 4
+       AND S.Semester IN (1, 3, 5, 7)
+      WHERE EP.FK_PaperID IN (${idPlaceholders})
+      GROUP BY EP.FK_PaperID
+    `);
+    const totals = new Map();
+    for (const row of counted.recordset || []) {
+      const code = idToCode.get(String(row.paperId));
+      if (!code) continue;
+      totals.set(code, (totals.get(code) || 0) + (Number(row.totalStudents) || 0));
+    }
+    for (const code of seen) {
+      const total = totals.get(code) || 0;
+      studentCounts.set(code, total);
+      rememberCount(code, total);
+    }
+  });
 
   const rows = (result.recordset || []).map((r, index) => {
     const meetingName = clean(r.meetingName);
@@ -191,18 +312,23 @@ const getSchedule = async ({ date, level = 'all' } = {}) => {
       meetingName,
       timing,
       meeting,
+      session: sessionOf(r.sourceTable),
+      totalStudents: studentCounts.get(String(clean(r.paperId) || '').toUpperCase()) || 0,
       courseTypeId: r.courseTypeId ?? null,
     };
   });
 
-  return {
+  const value = {
     date: allDates ? 'all' : day,
     level: levelKey,
     totalRecord: rows.length,
     ugCount: rows.filter((r) => r.level === 'UG').length,
     pgCount: rows.filter((r) => r.level === 'PG').length,
+    totalStudents: rows.reduce((sum, r) => sum + (r.totalStudents || 0), 0),
     rows,
   };
+  scheduleCache.set(cacheKey, { at: Date.now(), value });
+  return value;
 };
 
 module.exports = { getDates, getSchedule };

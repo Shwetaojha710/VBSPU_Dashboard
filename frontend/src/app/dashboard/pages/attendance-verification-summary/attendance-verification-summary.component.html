@@ -1,0 +1,229 @@
+<section class="page" aria-label="Attendance verification summary" [class.page--busy]="busy()">
+  @if (busy()) {
+    <div class="loader" role="status" aria-live="polite">
+      <span class="loader__spin" aria-hidden="true"></span>
+      <p>Loading attendance verification…</p>
+    </div>
+  }
+
+  <a class="page__link" routerLink="/">← Back to Overview</a>
+  <h1 class="page__title">Attendance Verification Summary</h1>
+
+  <form class="filters" (ngSubmit)="search()">
+    <label class="field">
+      <span>Course Type</span>
+      <select name="courseTypeId" [(ngModel)]="filters.courseTypeId" (ngModelChange)="onFilterChange()">
+        <option [ngValue]="0">All</option>
+        <option [ngValue]="1">Under Graduate (U.G)</option>
+        <option [ngValue]="2">Post Graduate (P.G)</option>
+      </select>
+    </label>
+    <label class="field">
+      <span>Exam Date</span>
+      <select
+        name="examDate"
+        [(ngModel)]="filters.examDate"
+        (ngModelChange)="onFilterChange()"
+        [disabled]="loadingFilters()"
+      >
+        <option value="">All dates</option>
+        @for (d of examDates(); track d) {
+          <option [value]="d">{{ formatDate(d) }}</option>
+        }
+      </select>
+    </label>
+    <label class="field">
+      <span>Verified Date</span>
+      <select
+        name="verifiedDate"
+        [(ngModel)]="filters.verifiedDate"
+        (ngModelChange)="onFilterChange()"
+        [disabled]="loadingFilters()"
+      >
+        <option value="">All</option>
+        @for (d of verifiedDates(); track d) {
+          <option [value]="d">{{ formatDate(d) }}</option>
+        }
+      </select>
+    </label>
+    <label class="field">
+      <span>Status</span>
+      <select name="status" [(ngModel)]="filters.status" (ngModelChange)="onFilterChange()">
+        <option value="">All</option>
+        <option value="V">Verified</option>
+        <option value="D">Declined</option>
+        <option value="P">Not Verified</option>
+      </select>
+    </label>
+    <label class="field field--search">
+      <span>Search students</span>
+      <input
+        type="text"
+        name="tableSearch"
+        [value]="searchQuery()"
+        (input)="onSearchChange($any($event.target).value)"
+        placeholder="Search any column…"
+        autocomplete="off"
+        spellcheck="false"
+      />
+    </label>
+    <div class="filters__actions">
+      <button type="submit" class="btn btn--search" [disabled]="busy()">Search</button>
+      <button type="button" class="btn btn--reset" (click)="reset()" [disabled]="busy()">Reset</button>
+      <button type="button" class="btn btn--excel" (click)="exportExcel()" [disabled]="!filteredRows().length">
+        Export To Excel
+      </button>
+    </div>
+  </form>
+
+  @if (error()) {
+    <p class="page__error" role="alert">{{ error() }}</p>
+  }
+
+  <div class="stats">
+    <div class="stat">
+      <span>Total attendance</span>
+      <strong>{{ summary().totalAttendance | number }}</strong>
+    </div>
+    <div class="stat stat--ok">
+      <span>Present</span>
+      <strong>{{ summary().totalPresent | number }}</strong>
+    </div>
+    <div class="stat stat--warn">
+      <span>Absent</span>
+      <strong>{{ summary().totalAbsent | number }}</strong>
+    </div>
+    <div class="stat stat--verified">
+      <span>Verified</span>
+      <strong>{{ summary().totalVerified | number }}</strong>
+    </div>
+    <div class="stat stat--declined">
+      <span>Declined</span>
+      <strong>{{ summary().totalDeclined | number }}</strong>
+    </div>
+    <div class="stat">
+      <span>Colleges</span>
+      <strong>{{ summary().totalColleges | number }}</strong>
+    </div>
+    <div class="stat">
+      <span>Centres</span>
+      <strong>{{ summary().totalCentres | number }}</strong>
+    </div>
+    <div class="stat">
+      <span>Papers</span>
+      <strong>{{ summary().totalPapers | number }}</strong>
+    </div>
+  </div>
+
+  @if (!busy()) {
+    <h2 class="section-title">Verification by user</h2>
+    <div class="table-wrap">
+      <table class="grid grid--user">
+        <thead>
+          <tr>
+            <th>S.No.</th>
+            <th>User</th>
+            <th>Verified</th>
+            <th>Declined</th>
+            <th>Total</th>
+            <th>Present</th>
+            <th>Last action</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (row of userWise(); track row.userId ?? row.sNo) {
+            <tr>
+              <td>{{ row.sNo }}</td>
+              <td>{{ row.userName || '—' }}</td>
+              <td>{{ row.verified | number }}</td>
+              <td>{{ row.declined | number }}</td>
+              <td>{{ row.total | number }}</td>
+              <td>{{ row.present | number }}</td>
+              <td>{{ row.lastActionDate || '—' }}</td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="7" class="empty">No verification actions for this filter.</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <h2 class="section-title">Student-wise attendance</h2>
+    @if (listSkipped()) {
+      <p class="page__hint">{{ listHint() }}</p>
+    } @else {
+      <div class="toolbar">
+        <span>
+          Showing {{ filteredRows().length | number }}
+          @if (searchQuery().trim()) {
+            <span class="muted">of {{ rows().length | number }}</span>
+          }
+          rows
+        </span>
+      </div>
+      <div class="table-wrap">
+        <table class="grid">
+          <thead>
+            <tr>
+              <th>S.No.</th>
+              <th>Roll No</th>
+              <th>Student</th>
+              <th>Sem</th>
+              <th>Course</th>
+              <th>Subject</th>
+              <th>Paper</th>
+              <th>Exam Date</th>
+              <th>Attendance</th>
+              <th>Status</th>
+              <th>Action By</th>
+              <th>Action Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (row of pagedRows(); track row.sNo + '-' + (row.rollNo || '') + '-' + (row.paperCode || '')) {
+              <tr>
+                <td>{{ row.sNo }}</td>
+                <td>{{ row.rollNo || '—' }}</td>
+                <td>{{ row.studentName || '—' }}</td>
+                <td>{{ row.semNo ?? '—' }}</td>
+                <td>{{ row.course || '—' }}</td>
+                <td>{{ row.subject || '—' }}</td>
+                <td>
+                  <div>{{ row.paperCode || '—' }}</div>
+                  <div class="sub">{{ row.paperName || '' }}</div>
+                </td>
+                <td>{{ formatDate(row.examDate) }}</td>
+                <td>
+                  <span class="badge" [attr.data-att]="row.attendance">{{ row.attendance || '—' }}</span>
+                </td>
+                <td>
+                  <span class="badge" [attr.data-status]="row.verifyStatus">{{ row.verifyStatus || '—' }}</span>
+                </td>
+                <td>{{ row.actionBy || '—' }}</td>
+                <td>{{ formatDate(row.actionDate) }}</td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="12" class="empty">No attendance verification rows for this filter.</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      @if (filteredRows().length > pageSize) {
+        <div class="pager">
+          <span>Page {{ page() }} / {{ totalPages() }}</span>
+          <div class="pager__actions">
+            <button type="button" class="btn btn--page" (click)="prevPage()" [disabled]="page() <= 1">Previous</button>
+            <button type="button" class="btn btn--page" (click)="nextPage()" [disabled]="page() >= totalPages()">
+              Next
+            </button>
+          </div>
+        </div>
+      }
+    }
+  }
+</section>

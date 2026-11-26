@@ -1,4 +1,15 @@
 <header class="header">
+  <button
+    type="button"
+    class="menu-btn"
+    (click)="menuToggle.emit()"
+    [attr.aria-expanded]="navOpen()"
+    aria-label="Open menu"
+  >
+    <span></span>
+    <span></span>
+    <span></span>
+  </button>
   <a class="brand" routerLink="/" aria-label="VBSPU Dashboard – Overview">
     <img class="brand__logo" [src]="university().logo" alt="VBSPU emblem" width="60" height="60" />
     <span class="brand__divider" aria-hidden="true"></span>

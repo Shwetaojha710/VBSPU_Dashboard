@@ -85,6 +85,21 @@
       "icon": "clipboard-list"
     },
     {
+      "label": "Examiner Remuneration",
+      "path": "exam-remuneration",
+      "icon": "clipboard-list"
+    },
+    {
+      "label": "Copy Scan Status",
+      "path": "copy-scan-status",
+      "icon": "clipboard-list"
+    },
+    {
+      "label": "Attendance Verification Summary",
+      "path": "attendance-verification-summary",
+      "icon": "clipboard-list"
+    },
+    {
       "label": "AI Teaching & Faculty",
       "path": "ai-teaching-faculty",
       "icon": "brain",

@@ -105,6 +105,16 @@ function keywordsForNav(label: string, path: string): string[] {
     'exam-evaluators': ['evaluators', 'evaluator', 'faculty list'],
     'exam-schedule': ['schedule', 'timetable', 'paper', 'meeting'],
     'exam-attendance': ['attendance', 'centre wise', 'feed', 'not feed'],
+    'exam-remuneration': ['remuneration', 'renumeration', 'examiner bill', 'da', 'ta', 'copies', 'payment'],
+    'copy-scan-status': ['copy', 'barcode', 'flap', 'omr', 'award', 'scan', 'allotment', 'evaluation'],
+    'attendance-verification-summary': [
+      'attendance',
+      'verification',
+      'verified',
+      'declined',
+      'present',
+      'absent'
+    ],
     'ai-teaching-faculty': ['faculty', 'staff', 'teaching', 'ai'],
     'research-quality': ['research', 'quality', 'naac', 'iqac'],
     'finance-hr-campus': ['finance', 'fee', 'fees', 'hr', 'campus'],

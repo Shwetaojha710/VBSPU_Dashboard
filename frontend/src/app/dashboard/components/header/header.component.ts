@@ -7,6 +7,7 @@ import {
   computed,
   inject,
   input,
+  output,
   signal,
   viewChild
 } from '@angular/core';
@@ -42,6 +43,8 @@ export class HeaderComponent {
 
   readonly university = input.required<DashboardData['university']>();
   readonly data = input.required<HeaderData>();
+  readonly navOpen = input(false);
+  readonly menuToggle = output<void>();
 
   protected readonly menuOpen = signal(false);
   protected readonly searchOpen = signal(false);

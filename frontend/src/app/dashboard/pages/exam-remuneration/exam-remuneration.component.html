@@ -1,0 +1,461 @@
+<section class="page" aria-label="Examiner remuneration report">
+  <a class="page__link" routerLink="/">← Back to Overview</a>
+  <h1 class="page__title">Examiner Remuneration Report</h1>
+
+  <form class="filters" (ngSubmit)="search()">
+    <label class="field">
+      <span>Year</span>
+      <select
+        name="year"
+        [(ngModel)]="filters.year"
+        (ngModelChange)="search()"
+        [disabled]="loadingFilters()"
+        required
+      >
+        @for (y of years(); track y) {
+          <option [value]="y">{{ y }}</option>
+        }
+      </select>
+    </label>
+    <label class="field field--wide">
+      <span>Subject</span>
+      <select
+        name="subject"
+        [(ngModel)]="filters.subject"
+        (ngModelChange)="search()"
+        [disabled]="loadingFilters()"
+      >
+        <option value="">-- Select --</option>
+        @for (s of subjects(); track s) {
+          <option [value]="s">{{ s }}</option>
+        }
+      </select>
+    </label>
+    <label class="field">
+      <span>Nature of Appointment</span>
+      <select
+        name="nature"
+        [(ngModel)]="filters.nature"
+        (ngModelChange)="search()"
+        [disabled]="loadingFilters()"
+      >
+        <option value="">-- Select --</option>
+        @for (n of natures(); track n) {
+          <option [value]="n">{{ n }}</option>
+        }
+      </select>
+    </label>
+    <label class="field">
+      <span>Evl Code</span>
+      <input type="text" name="evlCode" [(ngModel)]="filters.evlCode" placeholder="Evl Code" autocomplete="off" />
+    </label>
+    <label class="field field--search">
+      <span>Search</span>
+      <input
+        type="text"
+        name="tableSearch"
+        [value]="searchQuery()"
+        (input)="onSearchChange($any($event.target).value)"
+        placeholder="Search any column…"
+        autocomplete="off"
+        spellcheck="false"
+      />
+    </label>
+    <div class="filters__actions">
+      <button type="submit" class="btn btn--search" [disabled]="loading() || loadingFilters()">Search</button>
+      <button type="button" class="btn btn--reset" (click)="reset()" [disabled]="loading()">Reset</button>
+      <button type="button" class="btn btn--excel" (click)="exportExcel()" [disabled]="!filteredRows().length">
+        Export To Excel
+      </button>
+    </div>
+  </form>
+
+  @if (error()) {
+    <p class="page__error" role="alert">{{ error() }}</p>
+  }
+
+  @if (loading() || loadingFilters()) {
+    <p class="page__text">Loading remuneration report…</p>
+  } @else {
+    <div class="toolbar">
+      <span class="toolbar__count">
+        Total: {{ filteredRows().length }}
+        @if (searchQuery().trim()) {
+          <span class="toolbar__muted">of {{ rows().length }}</span>
+        }
+      </span>
+    </div>
+
+    <div class="table-wrap">
+      <table class="grid">
+        <thead>
+          <tr>
+            <th rowspan="2">Examiner Name</th>
+            <th rowspan="2">Examiner College Name</th>
+            <th rowspan="2">Nature of Appointment</th>
+            <th rowspan="2">Subject</th>
+            <th rowspan="2">Bank Acc. No</th>
+            <th rowspan="2">IFSC</th>
+            <th colspan="2">Total Copies</th>
+            <th colspan="2">Remuneration</th>
+            <th rowspan="2">DA</th>
+            <th rowspan="2">TA</th>
+            <th rowspan="2">Paper Setter</th>
+            <th rowspan="2">Grand Total</th>
+            <th rowspan="2">Status</th>
+            <th rowspan="2">Action</th>
+          </tr>
+          <tr>
+            <th>UG</th>
+            <th>PG</th>
+            <th>UG</th>
+            <th>PG</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (row of pagedRows(); track row.evlCode + '-' + (row.subject || '') + '-' + $index) {
+            <tr [class.row--verified]="row.verified">
+              <td>{{ row.examinerName || '—' }}</td>
+              <td>{{ row.examinerCollege || '—' }}</td>
+              <td>{{ row.natureOfAppointment || '—' }}</td>
+              <td>{{ row.subject || '—' }}</td>
+              <td>{{ row.bankAccNo || '—' }}</td>
+              <td>{{ row.ifsc || '—' }}</td>
+              <td class="num">{{ row.totalCopiesUg }}</td>
+              <td class="num">{{ row.totalCopiesPg }}</td>
+              <td class="num">{{ row.remunerationUg }}</td>
+              <td class="num">{{ row.remunerationPg }}</td>
+              <td class="cell-edit">
+                <span class="num">{{ row.da }}</span>
+                @if (row.canEdit) {
+                  <button
+                    type="button"
+                    class="btn btn--edit"
+                    title="Update DA"
+                    (click)="editAllowance(row, 'da')"
+                    [disabled]="isSaving(row, 'da')"
+                  >
+                    Edit
+                  </button>
+                }
+              </td>
+              <td class="cell-edit">
+                <span class="num">{{ row.ta }}</span>
+                @if (row.canEdit) {
+                  <button
+                    type="button"
+                    class="btn btn--edit"
+                    title="Update TA"
+                    (click)="editAllowance(row, 'ta')"
+                    [disabled]="isSaving(row, 'ta')"
+                  >
+                    Edit
+                  </button>
+                }
+              </td>
+              <td class="cell-edit">
+                <span class="num">{{ row.paperSetter }}</span>
+                @if (row.canEdit) {
+                  <button
+                    type="button"
+                    class="btn btn--edit"
+                    title="Update Paper Setter"
+                    (click)="editAllowance(row, 'paperSetter')"
+                    [disabled]="isSaving(row, 'paperSetter')"
+                  >
+                    Edit
+                  </button>
+                }
+              </td>
+              <td class="num"><strong>{{ row.grandTotal | number: '1.2-2' }}</strong></td>
+              <td>
+                <span class="badge" [class.badge--ok]="row.verified" [class.badge--pending]="!row.verified">
+                  {{ row.verified ? 'Verified' : 'Unverified' }}
+                </span>
+              </td>
+              <td class="actions">
+                <button type="button" class="btn btn--view" (click)="viewBill(row)" [disabled]="!row.evlCode">
+                  View Bill Details
+                </button>
+                <button
+                  type="button"
+                  class="btn"
+                  [class.btn--verify]="!row.verified"
+                  [class.btn--unverify]="row.verified"
+                  (click)="toggleVerified(row)"
+                  [disabled]="!row.evlCode || isSaving(row, 'verify')"
+                >
+                  {{ row.verified ? 'Unverify' : 'Verify' }}
+                </button>
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="16" class="empty">No examiners found for these filters.</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    @if (filteredRows().length) {
+      <div class="pager">
+        <span>
+          Showing {{ pageStart() }}–{{ pageEnd() }} of {{ filteredRows().length }}
+        </span>
+        <div class="pager__actions">
+          <button type="button" class="btn btn--ghost" (click)="prevPage()" [disabled]="page() <= 1">Prev</button>
+          <span>Page {{ page() }} / {{ totalPages() }}</span>
+          <button type="button" class="btn btn--ghost" (click)="nextPage()" [disabled]="page() >= totalPages()">Next</button>
+        </div>
+      </div>
+    }
+  }
+
+  @if (billLoading() || bill() || billError()) {
+    <div class="modal" role="dialog" aria-modal="true" aria-label="Bill details" (click)="closeBill()">
+      <div class="modal__panel modal__panel--bill" (click)="$event.stopPropagation()">
+        <header class="modal__head">
+          <div>
+            <p class="modal__crumb">Examiner Remuneration Report &gt; Bill Details</p>
+            <h2>View Bill Details</h2>
+          </div>
+          <div class="modal__actions">
+            @if (bill()) {
+              <button type="button" class="btn btn--primary" (click)="printBill()">Print Bill</button>
+            }
+            <button type="button" class="btn btn--ghost" (click)="closeBill()">Back</button>
+            <button type="button" class="modal__close" (click)="closeBill()" aria-label="Close">×</button>
+          </div>
+        </header>
+
+        @if (billLoading()) {
+          <p class="page__text">Loading bill…</p>
+        } @else if (billError()) {
+          <p class="page__error">{{ billError() }}</p>
+        } @else if (bill()) {
+          <article class="annexure">
+            <header class="annexure__header">
+              <h3>Veer Bahadur Singh Purvanchal University, Jaunpur</h3>
+              <span class="annexure__badge">ANNEXURE — EVALUATION REMUNERATION</span>
+            </header>
+
+            <table class="annexure__meta">
+              <tbody>
+                <tr>
+                  <td>
+                    <span>Evaluator Code</span>
+                    <strong>{{ bill()!.profile.evaluatorCode || '—' }}</strong>
+                  </td>
+                  <td>
+                    <span>Bill Date</span>
+                    <strong>{{ bill()!.billDate || '—' }}</strong>
+                  </td>
+                  <td>
+                    <span>Examiner Name</span>
+                    <strong>{{ bill()!.profile.name || '—' }}</strong>
+                  </td>
+                  <td>
+                    <span>Subject</span>
+                    <strong>{{ bill()!.profile.subject || '—' }}</strong>
+                  </td>
+                </tr>
+                <tr>
+                  <td colspan="2">
+                    <span>College</span>
+                    <strong>{{ bill()!.profile.college || '—' }}</strong>
+                  </td>
+                  <td>
+                    <span>Nature of Appointment</span>
+                    <strong>{{ bill()!.profile.natureOfAppointment || '—' }}</strong>
+                  </td>
+                  <td>
+                    <span>IFSC</span>
+                    <strong>{{ bill()!.profile.ifsc || '—' }}</strong>
+                  </td>
+                </tr>
+                <tr>
+                  <td colspan="2">
+                    <span>Bank / A/c No.</span>
+                    <strong>
+                      {{ bill()!.profile.bankName || '—' }}
+                      @if (bill()!.profile.bankAccNo) {
+                        / {{ bill()!.profile.bankAccNo }}
+                      }
+                    </strong>
+                  </td>
+                  <td colspan="2">
+                    <span>Mobile</span>
+                    <strong>{{ bill()!.profile.mobileNo || '—' }}</strong>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+
+            @if (bill()!.ug) {
+              <h4 class="annexure__section">
+                COPIES EVALUATED — UG ({{ bill()!.ug!.lotCount }} LOT(S), RS {{ bill()!.ug!.rate }} PER COPY)
+              </h4>
+              <div class="table-wrap table-wrap--bill">
+                <table class="annexure__lots">
+                  <thead>
+                    <tr>
+                      <th>S.No</th>
+                      <th>Lot No</th>
+                      <th>Course</th>
+                      <th>Year</th>
+                      <th>Paper</th>
+                      <th>Allotted</th>
+                      <th>Received</th>
+                      <th>Copies</th>
+                      <th>Returned</th>
+                      <th>Net</th>
+                      <th>Rate</th>
+                      <th>Amount (Rs)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (lot of bill()!.ug!.lots; track lot.lotNo + '-' + (lot.paperCode || '') + '-ug-' + $index) {
+                      <tr>
+                        <td>{{ $index + 1 }}</td>
+                        <td>{{ lot.lotNo || '—' }}</td>
+                        <td>{{ lot.course || '—' }}</td>
+                        <td>{{ lot.year || '—' }}</td>
+                        <td>{{ lot.paperCode || '' }} {{ lot.paperName || '' }}</td>
+                        <td>{{ lot.dateAllot || '—' }}</td>
+                        <td>{{ lot.dateReceived || '—' }}</td>
+                        <td class="num">{{ lot.totalCopies }}</td>
+                        <td class="num">{{ lot.returnCopies }}</td>
+                        <td class="num">{{ lot.netCopies }}</td>
+                        <td class="num">{{ lot.rate }}</td>
+                        <td class="num">{{ lot.amount | number: '1.2-2' }}</td>
+                      </tr>
+                    } @empty {
+                      <tr>
+                        <td colspan="12" class="empty">No UG lots.</td>
+                      </tr>
+                    }
+                  </tbody>
+                  <tfoot>
+                    <tr>
+                      <td colspan="7">
+                        <strong>
+                          UG Total: {{ bill()!.ug!.copies }} (Copies) | {{ bill()!.ug!.returned }} (Returned) |
+                          {{ bill()!.ug!.net }} (Net) | {{ bill()!.ug!.amount | number: '1.2-2' }} (Total Amount)
+                        </strong>
+                      </td>
+                      <td class="num">{{ bill()!.ug!.copies }}</td>
+                      <td class="num">{{ bill()!.ug!.returned }}</td>
+                      <td class="num">{{ bill()!.ug!.net }}</td>
+                      <td></td>
+                      <td class="num"><strong>{{ bill()!.ug!.amount | number: '1.2-2' }}</strong></td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            }
+
+            @if (bill()!.pg && bill()!.pg!.lotCount > 0) {
+              <h4 class="annexure__section">
+                COPIES EVALUATED — PG ({{ bill()!.pg!.lotCount }} LOT(S), RS {{ bill()!.pg!.rate }} PER COPY)
+              </h4>
+              <div class="table-wrap table-wrap--bill">
+                <table class="annexure__lots">
+                  <thead>
+                    <tr>
+                      <th>S.No</th>
+                      <th>Lot No</th>
+                      <th>Course</th>
+                      <th>Year</th>
+                      <th>Paper</th>
+                      <th>Allotted</th>
+                      <th>Received</th>
+                      <th>Copies</th>
+                      <th>Returned</th>
+                      <th>Net</th>
+                      <th>Rate</th>
+                      <th>Amount (Rs)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (lot of bill()!.pg!.lots; track lot.lotNo + '-' + (lot.paperCode || '') + '-pg-' + $index) {
+                      <tr>
+                        <td>{{ $index + 1 }}</td>
+                        <td>{{ lot.lotNo || '—' }}</td>
+                        <td>{{ lot.course || '—' }}</td>
+                        <td>{{ lot.year || '—' }}</td>
+                        <td>{{ lot.paperCode || '' }} {{ lot.paperName || '' }}</td>
+                        <td>{{ lot.dateAllot || '—' }}</td>
+                        <td>{{ lot.dateReceived || '—' }}</td>
+                        <td class="num">{{ lot.totalCopies }}</td>
+                        <td class="num">{{ lot.returnCopies }}</td>
+                        <td class="num">{{ lot.netCopies }}</td>
+                        <td class="num">{{ lot.rate }}</td>
+                        <td class="num">{{ lot.amount | number: '1.2-2' }}</td>
+                      </tr>
+                    }
+                  </tbody>
+                  <tfoot>
+                    <tr>
+                      <td colspan="7">
+                        <strong>
+                          PG Total: {{ bill()!.pg!.copies }} (Copies) | {{ bill()!.pg!.returned }} (Returned) |
+                          {{ bill()!.pg!.net }} (Net) | {{ bill()!.pg!.amount | number: '1.2-2' }} (Total Amount)
+                        </strong>
+                      </td>
+                      <td class="num">{{ bill()!.pg!.copies }}</td>
+                      <td class="num">{{ bill()!.pg!.returned }}</td>
+                      <td class="num">{{ bill()!.pg!.net }}</td>
+                      <td></td>
+                      <td class="num"><strong>{{ bill()!.pg!.amount | number: '1.2-2' }}</strong></td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            }
+
+            <table class="annexure__summary">
+              <tbody>
+                <tr>
+                  <td>Remuneration UG ({{ bill()!.ug?.net || 0 }} copies)</td>
+                  <td class="num">{{ (bill()!.summary?.remunerationUg ?? 0) | number: '1.2-2' }}</td>
+                </tr>
+                <tr>
+                  <td>Remuneration PG ({{ bill()!.pg?.net || 0 }} copies)</td>
+                  <td class="num">{{ (bill()!.summary?.remunerationPg ?? 0) | number: '1.2-2' }}</td>
+                </tr>
+                <tr>
+                  <td>Dearness Allowance (DA)</td>
+                  <td class="num">{{ (bill()!.summary?.da ?? 0) | number: '1.2-2' }}</td>
+                </tr>
+                <tr>
+                  <td>Travelling Allowance (TA)</td>
+                  <td class="num">{{ (bill()!.summary?.ta ?? 0) | number: '1.2-2' }}</td>
+                </tr>
+                <tr>
+                  <td>Paper Setter</td>
+                  <td class="num">{{ (bill()!.summary?.paperSetter ?? 0) | number: '1.2-2' }}</td>
+                </tr>
+                <tr class="annexure__grand">
+                  <td>Grand Total (Rs)</td>
+                  <td class="num">{{ (bill()!.summary?.grandTotal ?? bill()!.totalAmount) | number: '1.2-2' }}</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <p class="annexure__words">
+              <strong>Amount in words:</strong>
+              {{ amountInWords(bill()!.summary?.grandTotal ?? bill()!.totalAmount) }}
+            </p>
+
+            <div class="annexure__signs">
+              <div>Examiner's Signature</div>
+              <div>Checked By</div>
+              <div>Controller of Examinations</div>
+            </div>
+          </article>
+        }
+      </div>
+    </div>
+  }
+</section>

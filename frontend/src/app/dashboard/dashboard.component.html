@@ -1,5 +1,14 @@
-<div class="shell">
-  <app-header class="shell__header" [university]="data.university" [data]="data.header" />
+<div class="shell" [class.shell--nav]="menuOpen()">
+  <app-header
+    class="shell__header"
+    [university]="data.university"
+    [data]="data.header"
+    [navOpen]="menuOpen()"
+    (menuToggle)="toggleNav()"
+  />
+  @if (menuOpen()) {
+    <button type="button" class="nav-backdrop" aria-label="Close menu" (click)="menuOpen.set(false)"></button>
+  }
   <app-sidebar class="shell__sidebar" [items]="data.navigation" />
 
   <main class="content">
