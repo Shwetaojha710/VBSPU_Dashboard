@@ -53,13 +53,16 @@ export class ExamScheduleComponent implements OnInit {
   protected readonly ugCount = signal(0);
   protected readonly pgCount = signal(0);
   protected readonly downloadingAll = signal(false);
+  protected readonly downloadingSubjectWise = signal(false);
   protected readonly loadingDates = signal(true);
   protected readonly loading = signal(false);
   protected readonly error = signal('');
   protected readonly page = signal(1);
   protected readonly pageSize = 40;
 
-  protected readonly busy = computed(() => this.loading() || this.loadingDates() || this.downloadingAll());
+  protected readonly busy = computed(
+    () => this.loading() || this.loadingDates() || this.downloadingAll() || this.downloadingSubjectWise()
+  );
 
   protected readonly subjects = computed(() => {
     const set = new Set<string>();
@@ -232,6 +235,47 @@ export class ExamScheduleComponent implements OnInit {
     }
     this.error.set('');
     printHtml(buildSchedulePrintHtml(list, this.selectedDate(), this.level(), this.selectedSubject()));
+  }
+
+  protected downloadSubjectWisePdf(): void {
+    if (this.downloadingSubjectWise()) return;
+    this.error.set('');
+    const level = this.level();
+    const subject = this.selectedSubject();
+    const query = this.searchQuery().trim().toLowerCase();
+
+    // Already on all-dates view — print filtered rows grouped by subject.
+    if (this.selectedDate() === 'all' && !this.loading()) {
+      const list = this.filteredRows();
+      if (!list.length) {
+        this.error.set('No rows to download as PDF.');
+        return;
+      }
+      printHtml(buildSchedulePrintHtml(list, 'all', level, subject, 'subject'));
+      return;
+    }
+
+    this.downloadingSubjectWise.set(true);
+    const params = new HttpParams().set('date', 'all').set('level', level);
+    this.http.get<ScheduleResponse>(`${environment.apiUrl}/dashboard/exam-schedule`, { params }).subscribe({
+      next: (res) => {
+        let list = res.rows ?? [];
+        if (subject && subject !== 'all') {
+          list = list.filter((r) => (r.subject ?? '').trim().toLowerCase() === subject.trim().toLowerCase());
+        }
+        if (query) list = list.filter((r) => rowMatchesQuery(r, query));
+        this.downloadingSubjectWise.set(false);
+        if (!list.length) {
+          this.error.set('No rows to download as PDF.');
+          return;
+        }
+        printHtml(buildSchedulePrintHtml(list, 'all', level, subject, 'subject'));
+      },
+      error: () => {
+        this.downloadingSubjectWise.set(false);
+        this.error.set('Could not download subject-wise PDF.');
+      }
+    });
   }
 
   protected downloadAllDatesPdf(): void {
@@ -457,9 +501,12 @@ function buildSchedulePrintHtml(
   const pgTotal = rows.filter((r) => r.level === 'PG').length;
   const splitBit =
     groupBy === 'date' ? ` &nbsp;|&nbsp; UG: <b>${ugTotal}</b> &nbsp;|&nbsp; PG: <b>${pgTotal}</b>` : '';
+  const heading =
+    groupBy === 'subject' && date === 'all' ? 'Exam Schedule (Subject-wise)' : 'Exam Schedule';
+  const layoutBit = groupBy === 'subject' ? ' &nbsp;|&nbsp; Layout: Subject-wise' : ' &nbsp;|&nbsp; Layout: Date-wise';
 
   return `<!doctype html><html><head><meta charset="utf-8"/>
-  <title>Exam Schedule</title>
+  <title>${esc(heading)}</title>
   <style>
     @page { size: A4 landscape; margin: 12mm 10mm 14mm;
       @bottom-right { content: "Page " counter(page) " of " counter(pages); font-family: Arial, sans-serif; font-size: 10px; color: #667085; }
@@ -488,9 +535,9 @@ function buildSchedulePrintHtml(
   </style></head><body>
   <header class="head">
     <div>
-      <h1>Exam Schedule</h1>
+      <h1>${esc(heading)}</h1>
       <p class="meta">
-        ${esc(dateLabel)} &nbsp;|&nbsp; Level: ${esc(levelLabel)}${subjectBit}
+        ${esc(dateLabel)} &nbsp;|&nbsp; Level: ${esc(levelLabel)}${subjectBit}${layoutBit}
         &nbsp;|&nbsp; Total papers: <b>${rows.length}</b>${splitBit}
         &nbsp;|&nbsp; Total students: <b>${students.toLocaleString('en-IN')}</b>
       </p>

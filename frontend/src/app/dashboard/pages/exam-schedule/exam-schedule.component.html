@@ -92,9 +92,17 @@
       </button>
       <button
         type="button"
+        class="btn btn--pdf-subject"
+        (click)="downloadSubjectWisePdf()"
+        [disabled]="loading() || downloadingSubjectWise() || downloadingAll()"
+      >
+        {{ downloadingSubjectWise() ? 'Preparing…' : 'Download PDF Subject Wise' }}
+      </button>
+      <button
+        type="button"
         class="btn btn--pdf-all"
         (click)="downloadAllDatesPdf()"
-        [disabled]="loading() || downloadingAll()"
+        [disabled]="loading() || downloadingAll() || downloadingSubjectWise()"
       >
         {{ downloadingAll() ? 'Preparing…' : 'Download All Dates PDF' }}
       </button>
