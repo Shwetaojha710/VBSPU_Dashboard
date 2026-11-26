@@ -189,13 +189,29 @@
         </div>
       </div>
 
-      @if (detailTotalRows() > detailPageSize) {
+      @if (detailTotalRows() > 0) {
         <div class="pager">
-          <span>Page {{ detailPage() }} / {{ detailTotalPages() }}</span>
+          <span class="pager__info">
+            Showing {{ detailPageStart() | number }}–{{ detailPageEnd() | number }} of
+            {{ detailTotalRows() | number }}
+          </span>
           <div class="pager__actions">
+            <label class="pager__size">
+              <span>Rows / page</span>
+              <select
+                [ngModel]="detailPageSize()"
+                (ngModelChange)="onDetailPageSizeChange($event)"
+                [disabled]="detailLoading()"
+              >
+                @for (size of detailPageSizeOptions; track size) {
+                  <option [ngValue]="size">{{ size }}</option>
+                }
+              </select>
+            </label>
             <button type="button" class="btn" (click)="prevDetailPage()" [disabled]="detailPage() <= 1 || detailLoading()">
               Previous
             </button>
+            <span class="pager__page">Page {{ detailPage() }} / {{ detailTotalPages() }}</span>
             <button
               type="button"
               class="btn"

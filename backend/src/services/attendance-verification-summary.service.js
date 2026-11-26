@@ -1,11 +1,11 @@
 const { getPool, sql } = require('../config/db');
 
 /**
- * Attendance Verification Summary — wraps portal SPs:
+ * Attendance Verification Summary — wraps portal SPs + paginated student list.
  *   dbo.Proc_VerifiedAttendanceSummary
  *   dbo.Proc_VerifiedAttendanceUserWise
- *   dbo.Proc_VerifiedAttendanceList
- * Read-only. Live DB data; session resolved dynamically.
+ * Student rows: same joins/filters as Proc_VerifiedAttendanceList, with OFFSET/FETCH.
+ * Read-only SELECT only.
  */
 
 const formatDate = (value) => {
@@ -46,6 +46,17 @@ const normalizeStatus = (raw) => {
   const s = String(raw || '').trim().toUpperCase();
   if (s === 'V' || s === 'D' || s === 'P') return s;
   return null;
+};
+
+const resolvePage = (raw) => {
+  const n = Number(raw);
+  return Number.isFinite(n) && n >= 1 ? Math.floor(n) : 1;
+};
+
+const resolvePageSize = (raw) => {
+  const n = Number(raw);
+  if ([25, 40, 50, 100].includes(n)) return n;
+  return 40;
 };
 
 const resolveSessionId = async (pool) => {
@@ -150,24 +161,100 @@ const getUserWise = async (pool, sessionId, filters = {}) => {
   }));
 };
 
-const getStudentRows = async (pool, sessionId, filters = {}) => {
+/** Paginated student rows — same filters as Proc_VerifiedAttendanceList. */
+const getStudentRowsPaged = async (pool, sessionId, filters = {}) => {
   const examDate = normalizeDate(filters.examDate);
   const verifiedDate = normalizeDate(filters.verifiedDate);
   const courseTypeId = normalizeCourseType(filters.courseTypeId);
   const status = normalizeStatus(filters.status);
+  const page = resolvePage(filters.page);
+  const pageSize = resolvePageSize(filters.pageSize);
+  const offset = (page - 1) * pageSize;
+  const search = String(filters.search || '').trim().slice(0, 80);
 
-  const result = await pool
+  const reqCount = pool
     .request()
-    .input('ExamDate', sql.VarChar(20), examDate)
-    .input('CourseTypeId', sql.Int, courseTypeId)
     .input('SessionId', sql.Int, sessionId)
+    .input('ExamDate', sql.VarChar(20), examDate)
     .input('VerifiedDate', sql.VarChar(20), verifiedDate)
-    .input('Status', sql.Char(1), status)
-    .input('UserId', sql.BigInt, null)
-    .execute('Proc_VerifiedAttendanceList');
+    .input('CourseTypeId', sql.Int, courseTypeId)
+    .input('Status', sql.Char(1), status);
 
-  return (result.recordset || []).map((r, index) => ({
-    sNo: index + 1,
+  const reqList = pool
+    .request()
+    .input('SessionId', sql.Int, sessionId)
+    .input('ExamDate', sql.VarChar(20), examDate)
+    .input('VerifiedDate', sql.VarChar(20), verifiedDate)
+    .input('CourseTypeId', sql.Int, courseTypeId)
+    .input('Status', sql.Char(1), status)
+    .input('offset', sql.Int, offset)
+    .input('pageSize', sql.Int, pageSize);
+
+  if (search) {
+    reqCount.input('search', sql.NVarChar(80), `%${search}%`);
+    reqList.input('search', sql.NVarChar(80), `%${search}%`);
+  }
+
+  const where = `
+    WHERE EA.Sessionid = @SessionId
+      AND (@ExamDate IS NULL OR CAST(COALESCE(EA.ExamDate, EA.CreatedAt) AS DATE) = TRY_CONVERT(DATE, @ExamDate, 23))
+      AND (@CourseTypeId IS NULL OR EA.CourseTypeId = @CourseTypeId)
+      AND (@VerifiedDate IS NULL OR (ISNULL(EA.ApprovedBy, 0) <> 0 AND CAST(EA.ApprovedDate AS DATE) = TRY_CONVERT(DATE, @VerifiedDate, 23)))
+      AND (@Status IS NULL
+           OR (@Status = 'V' AND ISNULL(EA.ApprovedBy, 0) <> 0)
+           OR (@Status = 'D' AND ISNULL(EA.DeclinedBy, 0) <> 0)
+           OR (@Status = 'P' AND ISNULL(EA.ApprovedBy, 0) = 0 AND ISNULL(EA.DeclinedBy, 0) = 0))
+      ${
+        search
+          ? `AND (
+              EA.Rollno LIKE @search OR S.StudentName LIKE @search OR C.Course LIKE @search
+              OR SM.SubjectName LIKE @search OR P.PaperCode LIKE @search OR P.PaperName LIKE @search
+            )`
+          : ''
+      }
+  `;
+
+  const from = `
+    FROM dbo.ExamAttendance EA WITH (NOLOCK)
+    INNER JOIN dbo.Student_Data S WITH (NOLOCK) ON S.StudentId = EA.Studentid
+    LEFT JOIN dbo.Course C WITH (NOLOCK) ON C.PK_CourseID = EA.courseId
+    LEFT JOIN dbo.SubjectMaster SM WITH (NOLOCK) ON SM.PK_SubjectID = EA.SubjectId
+    LEFT JOIN dbo.PaperMaster P WITH (NOLOCK) ON P.PK_PaperID = EA.Paperid
+    LEFT JOIN dbo.SecLogin UA WITH (NOLOCK) ON UA.PK_UserID = NULLIF(EA.ApprovedBy, 0)
+    LEFT JOIN dbo.SecLogin UD WITH (NOLOCK) ON UD.PK_UserID = NULLIF(EA.DeclinedBy, 0)
+  `;
+
+  const [countResult, listResult] = await Promise.all([
+    reqCount.query(`SELECT COUNT(*) AS totalRows ${from} ${where}`),
+    reqList.query(`
+      SELECT
+        EA.Rollno AS RollNo,
+        S.StudentName,
+        EA.[year] AS SemNo,
+        C.Course,
+        LTRIM(RTRIM(SM.SubjectName)) AS Subject,
+        P.PaperCode,
+        P.PaperName,
+        CAST(COALESCE(EA.ExamDate, EA.CreatedAt) AS DATE) AS ExamDate,
+        CASE WHEN ISNULL(EA.Present, 0) = 1 THEN 'Present' ELSE 'Absent' END AS Attendance,
+        CASE WHEN ISNULL(EA.ApprovedBy, 0) <> 0 THEN 'Verified'
+             WHEN ISNULL(EA.DeclinedBy, 0) <> 0 THEN 'Declined'
+             ELSE 'Not Verified' END AS VerifyStatus,
+        CASE WHEN ISNULL(EA.ApprovedBy, 0) <> 0 THEN UA.Name
+             WHEN ISNULL(EA.DeclinedBy, 0) <> 0 THEN UD.Name END AS ActionBy,
+        CASE WHEN ISNULL(EA.ApprovedBy, 0) <> 0 THEN EA.ApprovedDate
+             WHEN ISNULL(EA.DeclinedBy, 0) <> 0 THEN EA.DeclinedDate END AS ActionDate,
+        EA.DeclineReason
+      ${from}
+      ${where}
+      ORDER BY ActionDate DESC, ExamDate, EA.Rollno
+      OFFSET @offset ROWS FETCH NEXT @pageSize ROWS ONLY
+    `),
+  ]);
+
+  const totalRows = Number(countResult.recordset?.[0]?.totalRows) || 0;
+  const rows = (listResult.recordset || []).map((r, index) => ({
+    sNo: offset + index + 1,
     rollNo: display(r.RollNo),
     studentName: display(r.StudentName),
     semNo: r.SemNo ?? null,
@@ -183,6 +270,8 @@ const getStudentRows = async (pool, sessionId, filters = {}) => {
     actionDateTime: r.ActionDate ? formatDateTime(r.ActionDate) : null,
     declineReason: display(r.DeclineReason),
   }));
+
+  return { totalRows, page, pageSize, rows };
 };
 
 const getReport = async (filters = {}) => {
@@ -190,39 +279,44 @@ const getReport = async (filters = {}) => {
   const verifiedDate = normalizeDate(filters.verifiedDate);
   const courseTypeId = normalizeCourseType(filters.courseTypeId);
   const status = normalizeStatus(filters.status);
+  const page = resolvePage(filters.page);
+  const pageSize = resolvePageSize(filters.pageSize);
+  const search = String(filters.search || '').trim().slice(0, 80);
 
-  // Full unscoped list is ~140k rows — only load when a date/status filter is set.
-  const hasListScope = Boolean(examDate || verifiedDate || status);
   const pool = await getPool();
   const sessionId = await resolveSessionId(pool);
 
-  const [summary, userWise] = await Promise.all([
+  const [summary, userWise, studentPage] = await Promise.all([
     getSummary(pool, sessionId, { examDate, verifiedDate, courseTypeId }),
     getUserWise(pool, sessionId, { examDate, verifiedDate, courseTypeId }),
+    getStudentRowsPaged(pool, sessionId, {
+      examDate,
+      verifiedDate,
+      courseTypeId,
+      status,
+      page,
+      pageSize,
+      search,
+    }),
   ]);
-
-  if (!hasListScope) {
-    return {
-      sessionId,
-      filters: { examDate, verifiedDate, courseTypeId: courseTypeId || 0, status: status || '' },
-      summary,
-      userWise,
-      totalRecord: 0,
-      rows: [],
-      listSkipped: true,
-      message: 'Select Exam Date, Verified Date, or Status to load student-wise rows.',
-    };
-  }
-
-  const rows = await getStudentRows(pool, sessionId, { examDate, verifiedDate, courseTypeId, status });
 
   return {
     sessionId,
-    filters: { examDate, verifiedDate, courseTypeId: courseTypeId || 0, status: status || '' },
+    filters: {
+      examDate,
+      verifiedDate,
+      courseTypeId: courseTypeId || 0,
+      status: status || '',
+      page: studentPage.page,
+      pageSize: studentPage.pageSize,
+      search,
+    },
     summary,
     userWise,
-    totalRecord: rows.length,
-    rows,
+    totalRecord: studentPage.totalRows,
+    page: studentPage.page,
+    pageSize: studentPage.pageSize,
+    rows: studentPage.rows,
     listSkipped: false,
   };
 };

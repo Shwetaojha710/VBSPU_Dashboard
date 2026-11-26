@@ -210,9 +210,34 @@
 }
 
 .toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
   margin-bottom: 8px;
   font-size: 13px;
   color: var(--color-text-secondary);
+}
+
+.toolbar--busy,
+.table-wrap--busy {
+  opacity: 0.65;
+  pointer-events: none;
+}
+
+.page-size {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+
+  select {
+    padding: 6px 8px;
+    border: 1px solid #c5cdd8;
+    border-radius: 6px;
+    background: #fff;
+    font: inherit;
+  }
 }
 
 .muted {

@@ -268,6 +268,9 @@ const getAttendanceVerificationSummary = async (req, res, next) => {
         verifiedDate: req.query.verifiedDate,
         courseTypeId: req.query.courseTypeId,
         status: req.query.status,
+        page: req.query.page,
+        pageSize: req.query.pageSize,
+        search: req.query.search,
       })
     );
   } catch (err) {

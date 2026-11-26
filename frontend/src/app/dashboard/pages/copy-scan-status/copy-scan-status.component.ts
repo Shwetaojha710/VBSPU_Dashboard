@@ -87,11 +87,13 @@ const COLUMN_LABELS: Record<string, string> = {
   lotBarcode: 'Lot barcode',
   course: 'Course',
   subject: 'Subject',
-  paperCode: 'Paper',
+  paperCode: 'Paper code',
+  paperName: 'Paper name',
   lots: 'Lots',
   copies: 'Copies',
   scanned: 'Scanned',
-  evaluatorCode: 'Evaluator',
+  evaluatorName: 'Teacher',
+  evaluatorCode: 'Teacher code',
   dateAllot: 'Allot date',
   dateRece: 'Receive date',
   barcode: 'Barcode',
@@ -128,7 +130,8 @@ export class CopyScanStatusComponent implements OnInit {
   protected readonly detailLoading = signal(false);
   protected readonly detailError = signal('');
   protected readonly detailPage = signal(1);
-  protected readonly detailPageSize = 25;
+  protected readonly detailPageSize = signal(25);
+  protected readonly detailPageSizeOptions = [25, 50, 100];
   protected readonly detailSearch = signal('');
 
   protected readonly busy = computed(() => this.loading() || this.loadingFilters());
@@ -139,7 +142,16 @@ export class CopyScanStatusComponent implements OnInit {
   });
 
   protected readonly detailTotalPages = computed(() =>
-    Math.max(1, Math.ceil(this.detailTotalRows() / this.detailPageSize))
+    Math.max(1, Math.ceil(this.detailTotalRows() / this.detailPageSize()))
+  );
+
+  protected readonly detailPageStart = computed(() => {
+    if (!this.detailTotalRows()) return 0;
+    return (Math.min(this.detailPage(), this.detailTotalPages()) - 1) * this.detailPageSize() + 1;
+  });
+
+  protected readonly detailPageEnd = computed(() =>
+    Math.min(this.detailPageStart() + this.detailPageSize() - 1, this.detailTotalRows())
   );
 
   protected readonly stageViews = computed((): StageView[] => {
@@ -170,7 +182,7 @@ export class CopyScanStatusComponent implements OnInit {
         title: 'Allotted for evaluation',
         value: allotted,
         base: coded,
-        hint: `${this.pct(allotted, coded)} of coded · pending ${fmt(Math.max(coded - allotted, 0))}`,
+        hint: `${this.pct(allotted, coded)} of coded · pending ${fmt(Math.max(coded - allotted, 0))} · click for course / teacher`,
         tone: 'ok',
         available: true,
         secondary: null
@@ -180,8 +192,8 @@ export class CopyScanStatusComponent implements OnInit {
         step: 3,
         title: 'Received after evaluation',
         value: received,
-        base: allotted,
-        hint: `${this.pct(received, allotted)} of allotted · pending ${fmt(Math.max(allotted - received, 0))}`,
+        base: allotted || coded,
+        hint: `${this.pct(received, allotted || coded)} of allotted · pending ${fmt(Math.max((allotted || coded) - received, 0))}`,
         tone: 'mid',
         available: true,
         secondary: null
@@ -314,6 +326,12 @@ export class CopyScanStatusComponent implements OnInit {
     this.loadDetails();
   }
 
+  protected onDetailPageSizeChange(value: number | string): void {
+    this.detailPageSize.set(Number(value) || 25);
+    this.detailPage.set(1);
+    this.loadDetails();
+  }
+
   protected prevDetailPage(): void {
     this.detailPage.update((p) => Math.max(1, p - 1));
     this.loadDetails();
@@ -335,9 +353,11 @@ export class CopyScanStatusComponent implements OnInit {
       course: row.course,
       subject: row.subject,
       paperCode: row.paperCode,
+      paperName: row.paperName,
       copies: row.copies,
       lots: row.lots,
       scanned: row.scanned,
+      evaluatorName: row.evaluatorName,
       evaluatorCode: row.evaluatorCode,
       dateAllot: row.dateAllot,
       dateRece: row.dateRece,
@@ -373,7 +393,7 @@ export class CopyScanStatusComponent implements OnInit {
       .set('level', this.level())
       .set('stage', stage)
       .set('page', String(this.detailPage()))
-      .set('pageSize', String(this.detailPageSize));
+      .set('pageSize', String(this.detailPageSize()));
     const q = this.detailSearch().trim();
     if (q) params = params.set('search', q);
 

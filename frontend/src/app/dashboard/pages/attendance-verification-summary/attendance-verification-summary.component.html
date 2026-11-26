@@ -62,7 +62,8 @@
         name="tableSearch"
         [value]="searchQuery()"
         (input)="onSearchChange($any($event.target).value)"
-        placeholder="Search any column…"
+        (keydown.enter)="$event.preventDefault(); applySearch()"
+        placeholder="Roll no, name, course, paper…"
         autocomplete="off"
         spellcheck="false"
       />
@@ -70,7 +71,7 @@
     <div class="filters__actions">
       <button type="submit" class="btn btn--search" [disabled]="busy()">Search</button>
       <button type="button" class="btn btn--reset" (click)="reset()" [disabled]="busy()">Reset</button>
-      <button type="button" class="btn btn--excel" (click)="exportExcel()" [disabled]="!filteredRows().length">
+      <button type="button" class="btn btn--excel" (click)="exportExcel()" [disabled]="!rows().length">
         Export To Excel
       </button>
     </div>
@@ -151,79 +152,90 @@
     </div>
 
     <h2 class="section-title">Student-wise attendance</h2>
-    @if (listSkipped()) {
-      <p class="page__hint">{{ listHint() }}</p>
-    } @else {
-      <div class="toolbar">
-        <span>
-          Showing {{ filteredRows().length | number }}
-          @if (searchQuery().trim()) {
-            <span class="muted">of {{ rows().length | number }}</span>
+    <div class="toolbar" [class.toolbar--busy]="loadingRows()">
+      <span>
+        @if (totalRecord()) {
+          Showing {{ pageStart() | number }}–{{ pageEnd() | number }} of {{ totalRecord() | number }}
+        } @else {
+          No matching rows
+        }
+      </span>
+      <label class="page-size">
+        <span>Rows</span>
+        <select [ngModel]="pageSize()" (ngModelChange)="onPageSizeChange($event)" name="pageSize">
+          @for (n of pageSizeOptions; track n) {
+            <option [ngValue]="n">{{ n }}</option>
           }
-          rows
-        </span>
-      </div>
-      <div class="table-wrap">
-        <table class="grid">
-          <thead>
+        </select>
+      </label>
+    </div>
+    <div class="table-wrap" [class.table-wrap--busy]="loadingRows()">
+      <table class="grid">
+        <thead>
+          <tr>
+            <th>S.No.</th>
+            <th>Roll No</th>
+            <th>Student</th>
+            <th>Sem</th>
+            <th>Course</th>
+            <th>Subject</th>
+            <th>Paper</th>
+            <th>Exam Date</th>
+            <th>Attendance</th>
+            <th>Status</th>
+            <th>Action By</th>
+            <th>Action Date</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (row of rows(); track row.sNo + '-' + (row.rollNo || '') + '-' + (row.paperCode || '')) {
             <tr>
-              <th>S.No.</th>
-              <th>Roll No</th>
-              <th>Student</th>
-              <th>Sem</th>
-              <th>Course</th>
-              <th>Subject</th>
-              <th>Paper</th>
-              <th>Exam Date</th>
-              <th>Attendance</th>
-              <th>Status</th>
-              <th>Action By</th>
-              <th>Action Date</th>
+              <td>{{ row.sNo }}</td>
+              <td>{{ row.rollNo || '—' }}</td>
+              <td>{{ row.studentName || '—' }}</td>
+              <td>{{ row.semNo ?? '—' }}</td>
+              <td>{{ row.course || '—' }}</td>
+              <td>{{ row.subject || '—' }}</td>
+              <td>
+                <div>{{ row.paperCode || '—' }}</div>
+                <div class="sub">{{ row.paperName || '' }}</div>
+              </td>
+              <td>{{ formatDate(row.examDate) }}</td>
+              <td>
+                <span class="badge" [attr.data-att]="row.attendance">{{ row.attendance || '—' }}</span>
+              </td>
+              <td>
+                <span class="badge" [attr.data-status]="row.verifyStatus">{{ row.verifyStatus || '—' }}</span>
+              </td>
+              <td>{{ row.actionBy || '—' }}</td>
+              <td>{{ formatDate(row.actionDate) }}</td>
             </tr>
-          </thead>
-          <tbody>
-            @for (row of pagedRows(); track row.sNo + '-' + (row.rollNo || '') + '-' + (row.paperCode || '')) {
-              <tr>
-                <td>{{ row.sNo }}</td>
-                <td>{{ row.rollNo || '—' }}</td>
-                <td>{{ row.studentName || '—' }}</td>
-                <td>{{ row.semNo ?? '—' }}</td>
-                <td>{{ row.course || '—' }}</td>
-                <td>{{ row.subject || '—' }}</td>
-                <td>
-                  <div>{{ row.paperCode || '—' }}</div>
-                  <div class="sub">{{ row.paperName || '' }}</div>
-                </td>
-                <td>{{ formatDate(row.examDate) }}</td>
-                <td>
-                  <span class="badge" [attr.data-att]="row.attendance">{{ row.attendance || '—' }}</span>
-                </td>
-                <td>
-                  <span class="badge" [attr.data-status]="row.verifyStatus">{{ row.verifyStatus || '—' }}</span>
-                </td>
-                <td>{{ row.actionBy || '—' }}</td>
-                <td>{{ formatDate(row.actionDate) }}</td>
-              </tr>
-            } @empty {
-              <tr>
-                <td colspan="12" class="empty">No attendance verification rows for this filter.</td>
-              </tr>
-            }
-          </tbody>
-        </table>
-      </div>
+          } @empty {
+            <tr>
+              <td colspan="12" class="empty">No attendance verification rows for this filter.</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
 
-      @if (filteredRows().length > pageSize) {
-        <div class="pager">
-          <span>Page {{ page() }} / {{ totalPages() }}</span>
-          <div class="pager__actions">
-            <button type="button" class="btn btn--page" (click)="prevPage()" [disabled]="page() <= 1">Previous</button>
-            <button type="button" class="btn btn--page" (click)="nextPage()" [disabled]="page() >= totalPages()">
-              Next
-            </button>
-          </div>
+    @if (totalRecord() > pageSize()) {
+      <div class="pager">
+        <span>Page {{ page() }} / {{ totalPages() }}</span>
+        <div class="pager__actions">
+          <button type="button" class="btn btn--page" (click)="prevPage()" [disabled]="page() <= 1 || loadingRows()">
+            Previous
+          </button>
+          <button
+            type="button"
+            class="btn btn--page"
+            (click)="nextPage()"
+            [disabled]="page() >= totalPages() || loadingRows()"
+          >
+            Next
+          </button>
         </div>
-      }
+      </div>
     }
   }
 </section>

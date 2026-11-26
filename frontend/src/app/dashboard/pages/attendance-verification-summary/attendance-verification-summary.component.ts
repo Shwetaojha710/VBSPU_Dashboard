@@ -49,9 +49,9 @@ interface ReportResponse {
   summary: SummaryCards;
   userWise?: UserWiseRow[];
   totalRecord: number;
+  page?: number;
+  pageSize?: number;
   rows: VerificationRow[];
-  listSkipped?: boolean;
-  message?: string;
 }
 
 const emptySummary = (): SummaryCards => ({
@@ -81,14 +81,15 @@ export class AttendanceVerificationSummaryComponent implements OnInit {
   protected readonly rows = signal<VerificationRow[]>([]);
   protected readonly userWise = signal<UserWiseRow[]>([]);
   protected readonly summary = signal<SummaryCards>(emptySummary());
-  protected readonly listSkipped = signal(false);
-  protected readonly listHint = signal('');
+  protected readonly totalRecord = signal(0);
   protected readonly loadingFilters = signal(true);
   protected readonly loading = signal(false);
+  protected readonly loadingRows = signal(false);
   protected readonly error = signal('');
   protected readonly searchQuery = signal('');
   protected readonly page = signal(1);
-  protected readonly pageSize = 40;
+  protected readonly pageSize = signal(40);
+  protected readonly pageSizeOptions = [25, 40, 50, 100];
 
   protected filters = {
     examDate: '',
@@ -99,19 +100,16 @@ export class AttendanceVerificationSummaryComponent implements OnInit {
 
   protected readonly busy = computed(() => this.loading() || this.loadingFilters());
 
-  protected readonly filteredRows = computed(() => {
-    const q = this.searchQuery().trim().toLowerCase();
-    const list = this.rows();
-    if (!q) return list;
-    return list.filter((r) => rowMatches(r, q));
+  protected readonly totalPages = computed(() => Math.max(1, Math.ceil(this.totalRecord() / this.pageSize())));
+
+  protected readonly pageStart = computed(() => {
+    if (!this.totalRecord()) return 0;
+    return (Math.min(this.page(), this.totalPages()) - 1) * this.pageSize() + 1;
   });
 
-  protected readonly totalPages = computed(() => Math.max(1, Math.ceil(this.filteredRows().length / this.pageSize)));
-
-  protected readonly pagedRows = computed(() => {
-    const start = (this.page() - 1) * this.pageSize;
-    return this.filteredRows().slice(start, start + this.pageSize);
-  });
+  protected readonly pageEnd = computed(() =>
+    Math.min(this.pageStart() + this.pageSize() - 1, this.totalRecord())
+  );
 
   ngOnInit(): void {
     this.http
@@ -124,7 +122,6 @@ export class AttendanceVerificationSummaryComponent implements OnInit {
         next: (res) => {
           this.examDates.set(res.examDates ?? []);
           this.verifiedDates.set(res.verifiedDates ?? []);
-          // Portal default: All dates — live session totals, not only today.
           this.filters.examDate = '';
           this.loadingFilters.set(false);
           this.search();
@@ -137,64 +134,53 @@ export class AttendanceVerificationSummaryComponent implements OnInit {
   }
 
   protected onFilterChange(): void {
+    this.page.set(1);
     this.search();
   }
 
   protected search(): void {
-    this.loading.set(true);
-    this.error.set('');
     this.page.set(1);
-    this.searchQuery.set('');
-    let params = new HttpParams();
-    if (this.filters.examDate) params = params.set('examDate', this.filters.examDate);
-    if (this.filters.verifiedDate) params = params.set('verifiedDate', this.filters.verifiedDate);
-    if (this.filters.courseTypeId) params = params.set('courseTypeId', String(this.filters.courseTypeId));
-    if (this.filters.status) params = params.set('status', this.filters.status);
-
-    this.http
-      .get<ReportResponse>(`${environment.apiUrl}/dashboard/attendance-verification-summary`, { params })
-      .subscribe({
-        next: (res) => {
-          this.summary.set(res.summary ?? emptySummary());
-          this.userWise.set(res.userWise ?? []);
-          this.rows.set(res.rows ?? []);
-          this.listSkipped.set(Boolean(res.listSkipped));
-          this.listHint.set(res.message || '');
-          this.loading.set(false);
-        },
-        error: () => {
-          this.rows.set([]);
-          this.userWise.set([]);
-          this.summary.set(emptySummary());
-          this.loading.set(false);
-          this.error.set('Could not load attendance verification summary.');
-        }
-      });
+    this.loadReport(true);
   }
 
   protected reset(): void {
     this.filters = { examDate: '', verifiedDate: '', courseTypeId: 0, status: '' };
     this.searchQuery.set('');
+    this.page.set(1);
     this.search();
   }
 
   protected onSearchChange(value: string): void {
     this.searchQuery.set(value);
+  }
+
+  protected applySearch(): void {
     this.page.set(1);
+    this.loadReport(false);
+  }
+
+  protected onPageSizeChange(value: number | string): void {
+    this.pageSize.set(Number(value) || 40);
+    this.page.set(1);
+    this.loadReport(false);
   }
 
   protected prevPage(): void {
-    this.page.update((p) => Math.max(1, p - 1));
+    if (this.page() <= 1) return;
+    this.page.update((p) => p - 1);
+    this.loadReport(false);
   }
 
   protected nextPage(): void {
-    this.page.update((p) => Math.min(this.totalPages(), p + 1));
+    if (this.page() >= this.totalPages()) return;
+    this.page.update((p) => p + 1);
+    this.loadReport(false);
   }
 
   protected exportExcel(): void {
-    const list = this.filteredRows();
+    const list = this.rows();
     if (!list.length) {
-      this.error.set('No student rows to export. Select a date or status first.');
+      this.error.set('No student rows to export on this page.');
       return;
     }
     const headers = [
@@ -238,7 +224,7 @@ export class AttendanceVerificationSummaryComponent implements OnInit {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `attendance-verification-summary-${this.filters.examDate || 'all'}.csv`;
+    a.download = `attendance-verification-summary-${this.filters.examDate || 'all'}-p${this.page()}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   }
@@ -249,30 +235,49 @@ export class AttendanceVerificationSummaryComponent implements OnInit {
     if (!m) return value;
     return `${m[3]}-${m[2]}-${m[1]}`;
   }
+
+  private loadReport(fullBusy: boolean): void {
+    if (fullBusy) this.loading.set(true);
+    else this.loadingRows.set(true);
+    this.error.set('');
+
+    let params = new HttpParams()
+      .set('page', String(this.page()))
+      .set('pageSize', String(this.pageSize()));
+    if (this.filters.examDate) params = params.set('examDate', this.filters.examDate);
+    if (this.filters.verifiedDate) params = params.set('verifiedDate', this.filters.verifiedDate);
+    if (this.filters.courseTypeId) params = params.set('courseTypeId', String(this.filters.courseTypeId));
+    if (this.filters.status) params = params.set('status', this.filters.status);
+    const q = this.searchQuery().trim();
+    if (q) params = params.set('search', q);
+
+    this.http
+      .get<ReportResponse>(`${environment.apiUrl}/dashboard/attendance-verification-summary`, { params })
+      .subscribe({
+        next: (res) => {
+          this.summary.set(res.summary ?? emptySummary());
+          this.userWise.set(res.userWise ?? []);
+          this.rows.set(res.rows ?? []);
+          this.totalRecord.set(res.totalRecord ?? 0);
+          if (res.page) this.page.set(res.page);
+          if (res.pageSize) this.pageSize.set(res.pageSize);
+          this.loading.set(false);
+          this.loadingRows.set(false);
+        },
+        error: () => {
+          this.rows.set([]);
+          this.userWise.set([]);
+          this.summary.set(emptySummary());
+          this.totalRecord.set(0);
+          this.loading.set(false);
+          this.loadingRows.set(false);
+          this.error.set('Could not load attendance verification summary.');
+        }
+      });
+  }
 }
 
 function csv(value: unknown): string {
   const s = value == null ? '' : String(value);
   return `"${s.replace(/"/g, '""')}"`;
-}
-
-function rowMatches(row: VerificationRow, q: string): boolean {
-  return [
-    row.rollNo,
-    row.studentName,
-    row.semNo,
-    row.course,
-    row.subject,
-    row.paperCode,
-    row.paperName,
-    row.examDate,
-    row.attendance,
-    row.verifyStatus,
-    row.actionBy,
-    row.actionDate,
-    row.declineReason
-  ]
-    .map((v) => String(v ?? '').toLowerCase())
-    .join(' ')
-    .includes(q);
 }
