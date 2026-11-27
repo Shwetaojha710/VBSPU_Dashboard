@@ -8,6 +8,7 @@ import { DigitalEvaluationComponent } from '../../components/digital-evaluation/
 import { EventsCalendarComponent } from '../../components/events-calendar/events-calendar.component';
 import { FacultyDevelopmentComponent } from '../../components/faculty-development/faculty-development.component';
 import { FeeCollectionComponent } from '../../components/fee-collection/fee-collection.component';
+import { CopyScanStatusCardComponent } from '../../components/copy-scan-status-card/copy-scan-status-card.component';
 import { ExamStatusCardComponent } from '../../components/exam-status-card/exam-status-card.component';
 import { FunnelComponent } from '../../components/funnel/funnel.component';
 import { IntegrationsComponent } from '../../components/integrations/integrations.component';
@@ -88,7 +89,8 @@ const CHART_LAYOUTS: Record<'enrollment' | 'examResults' | 'grievances', BarChar
     QuickAccessComponent,
     ActivityFeedComponent,
     EventsCalendarComponent,
-    ExamStatusCardComponent
+    ExamStatusCardComponent,
+    CopyScanStatusCardComponent
   ],
   templateUrl: './overview.component.html',
   styleUrl: './overview.component.scss',

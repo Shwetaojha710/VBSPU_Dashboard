@@ -387,17 +387,40 @@ const getAllotmentStageDetails = async ({ level, stage, page, pageSize, search }
   const pool = await getPool2();
   const offset = (page - 1) * pageSize;
   const receivedOnly = stage === 'received';
+  // ExaminerName is often null in Lot_Allotment — resolve from Evaluators / PU_Evaluators_Final.
+  const teacherApply = `
+    OUTER APPLY (
+      SELECT TOP 1 EVL_NAME AS teacherName
+      FROM dbo.Evaluators WITH (NOLOCK)
+      WHERE LTRIM(RTRIM(EVL_CODE)) = LTRIM(RTRIM(A.ExaminerCode))
+        AND NULLIF(LTRIM(RTRIM(EVL_NAME)), '') IS NOT NULL
+    ) E
+    OUTER APPLY (
+      SELECT TOP 1 tName AS teacherName
+      FROM dbo.PU_Evaluators_Final WITH (NOLOCK)
+      WHERE LTRIM(RTRIM(uName)) = LTRIM(RTRIM(A.ExaminerCode))
+        AND NULLIF(LTRIM(RTRIM(tName)), '') IS NOT NULL
+      ORDER BY CASE WHEN IsApproved = 1 THEN 0 ELSE 1 END, unqID DESC
+    ) P`;
   const allotFrom =
     level === 'all'
       ? `FROM dbo.Lot_Allotment A WITH (NOLOCK)
-    LEFT JOIN dbo.LOT L WITH (NOLOCK) ON L.LOT_NO = A.Lot_No`
+    LEFT JOIN dbo.LOT L WITH (NOLOCK) ON L.LOT_NO = A.Lot_No
+    ${teacherApply}`
       : `FROM dbo.Lot_Allotment A WITH (NOLOCK)
     INNER JOIN dbo.LOT L WITH (NOLOCK) ON L.LOT_NO = A.Lot_No
     INNER JOIN dbo.Course C WITH (NOLOCK)
-      ON C.Course = L.COURSE AND ISNULL(C.IsDeleted, 0) = 0`;
+      ON C.Course = L.COURSE AND ISNULL(C.IsDeleted, 0) = 0
+    ${teacherApply}`;
+  const teacherNameExpr = `COALESCE(
+      NULLIF(LTRIM(RTRIM(A.ExaminerName)), ''),
+      NULLIF(LTRIM(RTRIM(E.teacherName)), ''),
+      NULLIF(LTRIM(RTRIM(P.teacherName)), '')
+    )`;
   const searchSql = search
     ? `AND (
         A.Lot_No LIKE @search OR A.ExaminerCode LIKE @search OR A.ExaminerName LIKE @search
+        OR E.teacherName LIKE @search OR P.teacherName LIKE @search
         OR L.COURSE LIKE @search OR L.SUBJECT LIKE @search OR L.PAPER_CODE LIKE @search
         OR L.PAPER_NAME LIKE @search OR L.LOT_BARCODE LIKE @search
       )`
@@ -434,7 +457,7 @@ const getAllotmentStageDetails = async ({ level, stage, page, pageSize, search }
         L.CENTER_CODE AS centerCode,
         TRY_CAST(A.NoOfCopies AS int) AS copies,
         A.ExaminerCode AS evaluatorCode,
-        A.ExaminerName AS evaluatorName,
+        ${teacherNameExpr} AS evaluatorName,
         A.DateCreated AS dateAllot,
         A.DateReceived AS dateRece
       ${allotFrom}
@@ -484,7 +507,7 @@ const getFlapStageDetails = async ({ year, page, pageSize, search }) => {
     ? `AND (
         BarCode LIKE @search OR RollNo LIKE @search OR [PAPER CODE] LIKE @search
         OR AnsNo LIKE @search OR Course LIKE @search OR Lot LIKE @search
-        OR CAST(Status AS nvarchar(40)) LIKE @search
+        OR CatchNo LIKE @search OR CAST(Status AS nvarchar(40)) LIKE @search
       )`
     : '';
 
@@ -494,11 +517,15 @@ const getFlapStageDetails = async ({ year, page, pageSize, search }) => {
     .input('year', sql.Int, y)
     .input('offset', sql.Int, offset)
     .input('pageSize', sql.Int, pageSize);
+  countReq.timeout = 90000;
+  listReq.timeout = 90000;
   if (search) {
     countReq.input('search', sql.NVarChar(80), `%${search}%`);
     listReq.input('search', sql.NVarChar(80), `%${search}%`);
   }
 
+  // Many recent flap rows have blank Course/Lot/PAPER CODE/Status.
+  // Enrich page rows via LOT barcode range (REMARK3) + Student_Data + award CatchNo.
   const [countResult, listResult] = await Promise.all([
     countReq.query(`
       SELECT COUNT(*) AS totalRows,
@@ -510,19 +537,61 @@ const getFlapStageDetails = async ({ year, page, pageSize, search }) => {
     `),
     listReq.query(`
       SELECT
-        BarCode AS barcode,
-        RollNo AS rollNo,
-        [PAPER CODE] AS paperCode,
-        AnsNo AS answerKeyNo,
-        Course AS course,
-        Lot AS lotNo,
-        Status AS status
-      FROM dbo.tbl_CopyFlap WITH (NOLOCK)
-      WHERE 1 = 1
-        ${yearSql}
-        ${searchSql}
-      ORDER BY FlapId DESC
-      OFFSET @offset ROWS FETCH NEXT @pageSize ROWS ONLY
+        F.BarCode AS barcode,
+        F.RollNo AS rollNo,
+        F.AnsNo AS answerKeyNo,
+        COALESCE(
+          NULLIF(LTRIM(RTRIM(L.COURSE)), ''),
+          NULLIF(LTRIM(RTRIM(S.CourseName)), ''),
+          NULLIF(LTRIM(RTRIM(F.Course)), '')
+        ) AS course,
+        COALESCE(
+          NULLIF(LTRIM(RTRIM(F.Lot)), ''),
+          NULLIF(LTRIM(RTRIM(L.LOT_NO)), '')
+        ) AS lotNo,
+        COALESCE(
+          NULLIF(LTRIM(RTRIM(F.[PAPER CODE])), ''),
+          NULLIF(LTRIM(RTRIM(L.PAPER_CODE)), ''),
+          NULLIF(LTRIM(RTRIM(F.CatchNo)), ''),
+          NULLIF(LTRIM(RTRIM(A.CatchNo)), '')
+        ) AS paperCode,
+        COALESCE(
+          NULLIF(LTRIM(RTRIM(F.Status)), ''),
+          NULLIF(LTRIM(RTRIM(S.ExamType)), '')
+        ) AS status
+      FROM (
+        SELECT
+          FlapId, BarCode, RollNo, AnsNo, Course, Lot, Status, CatchNo, [PAPER CODE]
+        FROM dbo.tbl_CopyFlap WITH (NOLOCK)
+        WHERE 1 = 1
+          ${yearSql}
+          ${searchSql}
+        ORDER BY FlapId DESC
+        OFFSET @offset ROWS FETCH NEXT @pageSize ROWS ONLY
+      ) F
+      OUTER APPLY (
+        SELECT TOP 1 LOT_NO, COURSE, PAPER_CODE
+        FROM dbo.LOT WITH (NOLOCK)
+        WHERE CHARINDEX('-', REMARK3) > 0
+          AND TRY_CAST(NULLIF(LTRIM(RTRIM(F.BarCode)), '') AS bigint) IS NOT NULL
+          AND TRY_CAST(LEFT(REMARK3, CHARINDEX('-', REMARK3) - 1) AS bigint) IS NOT NULL
+          AND TRY_CAST(SUBSTRING(REMARK3, CHARINDEX('-', REMARK3) + 1, 30) AS bigint) IS NOT NULL
+          AND TRY_CAST(F.BarCode AS bigint) BETWEEN
+            TRY_CAST(LEFT(REMARK3, CHARINDEX('-', REMARK3) - 1) AS bigint)
+            AND TRY_CAST(SUBSTRING(REMARK3, CHARINDEX('-', REMARK3) + 1, 30) AS bigint)
+      ) L
+      OUTER APPLY (
+        SELECT TOP 1 CourseName, ExamType
+        FROM dbo.Student_Data WITH (NOLOCK)
+        WHERE RollNo = F.RollNo
+        ORDER BY StudentId DESC
+      ) S
+      OUTER APPLY (
+        SELECT TOP 1 CatchNo
+        FROM dbo.AWARD_SHEET_NEw WITH (NOLOCK)
+        WHERE BarCode = F.BarCode
+      ) A
+      ORDER BY F.FlapId DESC
     `),
   ]);
 

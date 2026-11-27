@@ -1,0 +1,52 @@
+<section class="panel">
+  <header class="panel__head">
+    <h2 class="panel__title">
+      Copy Scan Status
+      <span class="panel__period">({{ year() }})</span>
+    </h2>
+    <span class="panel__link">View pipeline →</span>
+  </header>
+
+  @if (headline(); as h) {
+    <div class="body">
+      <div class="kpis">
+        <div class="kpi">
+          <span class="kpi__label">Barcode coded</span>
+          <span class="kpi__value">{{ h.coded }}</span>
+        </div>
+        <div class="kpi">
+          <span class="kpi__label">Allotted</span>
+          <span class="kpi__value kpi__value--ok">{{ h.allotted }}</span>
+        </div>
+        <div class="kpi">
+          <span class="kpi__label">OMR scanned</span>
+          <span class="kpi__value kpi__value--scan">{{ h.omr }}</span>
+        </div>
+        <div class="kpi">
+          <span class="kpi__label">Award scanned</span>
+          <span class="kpi__value kpi__value--warn">{{ h.award }}</span>
+        </div>
+      </div>
+
+      <ul class="stages" aria-label="Pipeline stages">
+        @for (chip of chips(); track chip.step) {
+          <li class="stage" [attr.data-tone]="chip.tone">
+            <span class="stage__step">{{ chip.step }}</span>
+            <span class="stage__label">{{ chip.label }}</span>
+            <strong class="stage__value">{{ chip.value | number }}</strong>
+          </li>
+        }
+      </ul>
+    </div>
+  } @else {
+    <p class="note">
+      {{
+        error()
+          ? 'Could not load copy scan status. Please refresh the page.'
+          : loading()
+            ? 'Loading copy scan status…'
+            : 'No copy scan data available.'
+      }}
+    </p>
+  }
+</section>
