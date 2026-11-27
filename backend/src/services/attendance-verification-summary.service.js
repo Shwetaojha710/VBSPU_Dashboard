@@ -53,9 +53,13 @@ const resolvePage = (raw) => {
   return Number.isFinite(n) && n >= 1 ? Math.floor(n) : 1;
 };
 
+const PAGE_SIZE_ALL = 5000;
+
 const resolvePageSize = (raw) => {
+  const key = String(raw ?? '').trim().toLowerCase();
+  if (key === 'all') return PAGE_SIZE_ALL;
   const n = Number(raw);
-  if ([25, 40, 50, 100].includes(n)) return n;
+  if ([25, 40, 50, 100, 500, 1000, 2000, PAGE_SIZE_ALL].includes(n)) return n;
   return 40;
 };
 

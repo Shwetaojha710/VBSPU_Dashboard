@@ -204,9 +204,11 @@
           Showing {{ pageStart() }}–{{ pageEnd() }} of {{ filteredRows().length }}
         </span>
         <div class="pager__actions">
+          <button type="button" class="btn btn--ghost" (click)="firstPage()" [disabled]="page() <= 1">First</button>
           <button type="button" class="btn btn--ghost" (click)="prevPage()" [disabled]="page() <= 1">Prev</button>
-          <span>Page {{ page() }} / {{ totalPages() }}</span>
+          <span>Page {{ page() }} / {{ totalPages() }} · Total: {{ filteredRows().length | number }}</span>
           <button type="button" class="btn btn--ghost" (click)="nextPage()" [disabled]="page() >= totalPages()">Next</button>
+          <button type="button" class="btn btn--ghost" (click)="lastPage()" [disabled]="page() >= totalPages()">Last</button>
         </div>
       </div>
     }

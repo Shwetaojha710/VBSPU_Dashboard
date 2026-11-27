@@ -439,7 +439,21 @@
 }
 
 .pager__info {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 14px;
   font-variant-numeric: tabular-nums;
+}
+
+.pager__sum {
+  color: #1f4b7a;
+  font-weight: 700;
+}
+
+.pager__sum--page {
+  color: #475467;
+  font-weight: 600;
 }
 
 .pager__actions {

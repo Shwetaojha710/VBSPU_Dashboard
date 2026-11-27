@@ -205,10 +205,14 @@
           of {{ filteredRows().length | number }}
         </span>
         <div class="pager__actions">
+          <button type="button" class="btn btn--page" (click)="firstPage()" [disabled]="page() <= 1">First</button>
           <button type="button" class="btn btn--page" (click)="prevPage()" [disabled]="page() <= 1">Previous</button>
-          <span>Page {{ page() }} / {{ totalPages() }}</span>
+          <span>Page {{ page() }} / {{ totalPages() }} · Total: {{ filteredRows().length | number }}</span>
           <button type="button" class="btn btn--page" (click)="nextPage()" [disabled]="page() >= totalPages()">
             Next
+          </button>
+          <button type="button" class="btn btn--page" (click)="lastPage()" [disabled]="page() >= totalPages()">
+            Last
           </button>
         </div>
       </div>

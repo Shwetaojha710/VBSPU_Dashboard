@@ -52,6 +52,14 @@ const courseTypeFilter = (alias, level) => {
   return '';
 };
 
+/** LOT.PAPER_CODE uses YY/… (e.g. 26/872 = calendar 2026). LOT.DATE is unused. */
+const paperYearPrefix = (year) => `${String(resolveYear(year)).slice(-2)}/%`;
+const lotPaperYearFilter = (alias = 'L') =>
+  `AND LTRIM(RTRIM(${alias}.PAPER_CODE)) LIKE @paperPrefix`;
+
+/** Max rows for "All" page size — avoids dumping millions of flap/OMR rows. */
+const PAGE_SIZE_ALL = 10000;
+
 const lotFromSql = (level) =>
   level === 'all'
     ? `FROM dbo.LOT L WITH (NOLOCK)`
@@ -98,8 +106,9 @@ const loadPipeline = async ({ year, level }) => {
   const levelKey = resolveLevel(level);
   const pool = await getPool2();
 
-  // LOT.DATE is unused on PU_2026 (placeholder 1900). Session DB = current lots, no year cut.
-  const lotReq = pool.request();
+  // LOT.DATE unused (1900). Year from PAPER_CODE prefix YY/… (25/ → 2025, 26/ → 2026).
+  const paperPrefix = paperYearPrefix(y);
+  const lotReq = pool.request().input('paperPrefix', sql.VarChar(10), paperPrefix);
   const lotSql = `
     SELECT
       ISNULL(SUM(TRY_CAST(L.NO_OF_COPIES AS int)), 0) AS totalCopies,
@@ -109,11 +118,15 @@ const loadPipeline = async ({ year, level }) => {
       COUNT(*) AS lotCount
     ${lotFromSql(levelKey)}
     WHERE 1 = 1
+      ${lotPaperYearFilter('L')}
       ${courseTypeFilter('C', levelKey)}
   `;
 
-  // Evaluation allotment / receive — dbo.Lot_Allotment (+ LOT/Course for UG-PG).
-  const allotReq = pool.request();
+  // Evaluation allotment / receive — by allotment year + matching LOT paper year.
+  const allotReq = pool
+    .request()
+    .input('year', sql.Int, y)
+    .input('paperPrefix', sql.VarChar(10), paperPrefix);
   const allotFrom =
     levelKey === 'all'
       ? `FROM dbo.Lot_Allotment A WITH (NOLOCK)
@@ -130,7 +143,9 @@ const loadPipeline = async ({ year, level }) => {
         THEN TRY_CAST(A.NoOfCopies AS int) ELSE 0 END), 0) AS receivedAfterEval,
       COUNT(*) AS allotRows
     ${allotFrom}
-    WHERE 1 = 1
+    WHERE A.DateCreated IS NOT NULL
+      AND YEAR(A.DateCreated) = @year
+      AND (L.LOT_NO IS NULL OR LTRIM(RTRIM(L.PAPER_CODE)) LIKE @paperPrefix)
       ${courseTypeFilter('C', levelKey)}
   `;
 
@@ -288,8 +303,10 @@ const resolvePage = (raw, fallback = 1) => {
 };
 
 const resolvePageSize = (raw) => {
+  const key = String(raw ?? '').trim().toLowerCase();
+  if (key === 'all') return PAGE_SIZE_ALL;
   const n = Number(raw);
-  if ([25, 50, 100].includes(n)) return n;
+  if ([25, 50, 100, 500, 1000, 2000, 5000, PAGE_SIZE_ALL].includes(n)) return n;
   return 25;
 };
 
@@ -325,10 +342,12 @@ const mapLotRow = (r, index, offset) => ({
   lots: r.lots != null ? num(r.lots) : null,
 });
 
-/** Barcode-coded lots from dbo.LOT (course / paper). */
-const getBarcodeStageDetails = async ({ level, page, pageSize, search }) => {
+/** Barcode-coded lots from dbo.LOT (course / paper), filtered by PAPER_CODE year. */
+const getBarcodeStageDetails = async ({ year, level, page, pageSize, search }) => {
   const pool = await getPool2();
   const offset = (page - 1) * pageSize;
+  const y = resolveYear(year);
+  const paperPrefix = paperYearPrefix(y);
   const searchSql = search
     ? `AND (
         L.LOT_NO LIKE @search OR L.LOT_BARCODE LIKE @search OR L.COURSE LIKE @search
@@ -338,12 +357,17 @@ const getBarcodeStageDetails = async ({ level, page, pageSize, search }) => {
     : '';
   const where = `
     WHERE NULLIF(LTRIM(RTRIM(L.LOT_BARCODE)), '') IS NOT NULL
+      ${lotPaperYearFilter('L')}
       ${courseTypeFilter('C', level)}
       ${searchSql}
   `;
 
-  const countReq = pool.request();
-  const listReq = pool.request().input('offset', sql.Int, offset).input('pageSize', sql.Int, pageSize);
+  const countReq = pool.request().input('paperPrefix', sql.VarChar(10), paperPrefix);
+  const listReq = pool
+    .request()
+    .input('paperPrefix', sql.VarChar(10), paperPrefix)
+    .input('offset', sql.Int, offset)
+    .input('pageSize', sql.Int, pageSize);
   if (search) {
     countReq.input('search', sql.NVarChar(80), `%${search}%`);
     listReq.input('search', sql.NVarChar(80), `%${search}%`);
@@ -383,9 +407,11 @@ const getBarcodeStageDetails = async ({ level, page, pageSize, search }) => {
 };
 
 /** Allotted / received rows from dbo.Lot_Allotment + LOT (course) + teacher. */
-const getAllotmentStageDetails = async ({ level, stage, page, pageSize, search }) => {
+const getAllotmentStageDetails = async ({ year, level, stage, page, pageSize, search }) => {
   const pool = await getPool2();
   const offset = (page - 1) * pageSize;
+  const y = resolveYear(year);
+  const paperPrefix = paperYearPrefix(y);
   const receivedOnly = stage === 'received';
   // ExaminerName is often null in Lot_Allotment — resolve from Evaluators / PU_Evaluators_Final.
   const teacherApply = `
@@ -426,14 +452,24 @@ const getAllotmentStageDetails = async ({ level, stage, page, pageSize, search }
       )`
     : '';
   const where = `
-    WHERE 1 = 1
+    WHERE A.DateCreated IS NOT NULL
+      AND YEAR(A.DateCreated) = @year
+      AND (L.LOT_NO IS NULL OR LTRIM(RTRIM(L.PAPER_CODE)) LIKE @paperPrefix)
       ${receivedOnly ? 'AND (A.isReceived = 1 OR A.DateReceived IS NOT NULL)' : ''}
       ${courseTypeFilter('C', level)}
       ${searchSql}
   `;
 
-  const countReq = pool.request();
-  const listReq = pool.request().input('offset', sql.Int, offset).input('pageSize', sql.Int, pageSize);
+  const countReq = pool
+    .request()
+    .input('year', sql.Int, y)
+    .input('paperPrefix', sql.VarChar(10), paperPrefix);
+  const listReq = pool
+    .request()
+    .input('year', sql.Int, y)
+    .input('paperPrefix', sql.VarChar(10), paperPrefix)
+    .input('offset', sql.Int, offset)
+    .input('pageSize', sql.Int, pageSize);
   if (search) {
     countReq.input('search', sql.NVarChar(80), `%${search}%`);
     listReq.input('search', sql.NVarChar(80), `%${search}%`);
@@ -488,11 +524,11 @@ const getAllotmentStageDetails = async ({ level, stage, page, pageSize, search }
   };
 };
 
-const getLotStageDetails = async ({ level, stage, page, pageSize, search }) => {
+const getLotStageDetails = async ({ year, level, stage, page, pageSize, search }) => {
   if (stage === 'allotted' || stage === 'received') {
-    return getAllotmentStageDetails({ level, stage, page, pageSize, search });
+    return getAllotmentStageDetails({ year, level, stage, page, pageSize, search });
   }
-  return getBarcodeStageDetails({ level, page, pageSize, search });
+  return getBarcodeStageDetails({ year, level, page, pageSize, search });
 };
 
 const getFlapStageDetails = async ({ year, page, pageSize, search }) => {
@@ -730,7 +766,7 @@ const getStageDetails = async (filters = {}) => {
   } else if (stage === 'omr' || stage === 'award') {
     detail = await getScanStageDetails({ year, stage, page, pageSize, search });
   } else {
-    detail = await getLotStageDetails({ level, stage, page, pageSize, search });
+    detail = await getLotStageDetails({ year, level, stage, page, pageSize, search });
   }
 
   const value = {

@@ -163,16 +163,18 @@
           @if (searchQuery().trim()) {
             <span>(filtered from {{ rows().length }})</span>
           }
+          <strong>· Total: {{ filteredRows().length | number }}</strong>
         </div>
         <div class="pager__controls">
           <label class="pager__size">
             <span>Rows</span>
-            <select [ngModel]="pageSize()" (ngModelChange)="onPageSizeChange($event)">
+            <select [ngModel]="pageSizeSelectValue()" (ngModelChange)="onPageSizeChange($event)">
               @for (size of pageSizeOptions; track size) {
-                <option [ngValue]="size">{{ size }}</option>
+                <option [ngValue]="size">{{ pageSizeLabel(size) }}</option>
               }
             </select>
           </label>
+          <button type="button" class="btn btn--ghost" (click)="firstPage()" [disabled]="page() <= 1">First</button>
           <button type="button" class="btn btn--ghost" (click)="prevPage()" [disabled]="page() <= 1">
             Previous
           </button>
@@ -184,6 +186,9 @@
             [disabled]="page() >= totalPages()"
           >
             Next
+          </button>
+          <button type="button" class="btn btn--ghost" (click)="lastPage()" [disabled]="page() >= totalPages()">
+            Last
           </button>
         </div>
       </div>

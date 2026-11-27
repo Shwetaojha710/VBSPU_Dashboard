@@ -143,12 +143,20 @@ export class ExamScheduleComponent implements OnInit {
     this.page.set(1);
   }
 
+  protected firstPage(): void {
+    this.page.set(1);
+  }
+
   protected prevPage(): void {
     this.page.update((p) => Math.max(1, p - 1));
   }
 
   protected nextPage(): void {
     this.page.update((p) => Math.min(this.totalPages(), p + 1));
+  }
+
+  protected lastPage(): void {
+    this.page.set(this.totalPages());
   }
 
   protected clearSearch(): void {

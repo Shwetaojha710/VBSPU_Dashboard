@@ -130,9 +130,11 @@ export class CopyScanStatusComponent implements OnInit {
   protected readonly detailLoading = signal(false);
   protected readonly detailError = signal('');
   protected readonly detailPage = signal(1);
+  /** 0 = All (capped server-side at 10,000). */
   protected readonly detailPageSize = signal(25);
-  protected readonly detailPageSizeOptions = [25, 50, 100];
+  protected readonly detailPageSizeOptions: Array<number | 'all'> = [25, 50, 100, 'all'];
   protected readonly detailSearch = signal('');
+  private static readonly ALL_PAGE_SIZE = 10000;
 
   protected readonly busy = computed(() => this.loading() || this.loadingFilters());
 
@@ -141,18 +143,47 @@ export class CopyScanStatusComponent implements OnInit {
     return this.stageViews().find((s) => s.key === key) ?? null;
   });
 
+  protected readonly effectiveDetailPageSize = computed(() => {
+    const size = this.detailPageSize();
+    if (size === 0) {
+      const total = this.detailTotalRows();
+      return Math.min(Math.max(total || CopyScanStatusComponent.ALL_PAGE_SIZE, 1), CopyScanStatusComponent.ALL_PAGE_SIZE);
+    }
+    return size;
+  });
+
   protected readonly detailTotalPages = computed(() =>
-    Math.max(1, Math.ceil(this.detailTotalRows() / this.detailPageSize()))
+    Math.max(1, Math.ceil(this.detailTotalRows() / this.effectiveDetailPageSize()))
   );
 
   protected readonly detailPageStart = computed(() => {
     if (!this.detailTotalRows()) return 0;
-    return (Math.min(this.detailPage(), this.detailTotalPages()) - 1) * this.detailPageSize() + 1;
+    return (Math.min(this.detailPage(), this.detailTotalPages()) - 1) * this.effectiveDetailPageSize() + 1;
   });
 
   protected readonly detailPageEnd = computed(() =>
-    Math.min(this.detailPageStart() + this.detailPageSize() - 1, this.detailTotalRows())
+    Math.min(this.detailPageStart() + this.effectiveDetailPageSize() - 1, this.detailTotalRows())
   );
+
+  /** Sum of Copies / Scanned on the current page (when those columns exist). */
+  protected readonly detailPageSum = computed(() => {
+    const rows = this.detailRows();
+    const cols = this.detailColumns();
+    if (cols.includes('copies')) {
+      return rows.reduce((n, r) => n + (Number(r.copies) || 0), 0);
+    }
+    if (cols.includes('scanned')) {
+      return rows.reduce((n, r) => n + (Number(r.scanned) || 0), 0);
+    }
+    return null;
+  });
+
+  protected readonly detailPageSumLabel = computed(() => {
+    const cols = this.detailColumns();
+    if (cols.includes('copies')) return 'Page copies';
+    if (cols.includes('scanned')) return 'Page scanned';
+    return 'Page total';
+  });
 
   protected readonly stageViews = computed((): StageView[] => {
     const s = this.stages();
@@ -327,18 +358,45 @@ export class CopyScanStatusComponent implements OnInit {
   }
 
   protected onDetailPageSizeChange(value: number | string): void {
-    this.detailPageSize.set(Number(value) || 25);
+    if (value === 'all' || value === 'All') {
+      this.detailPageSize.set(0);
+    } else {
+      this.detailPageSize.set(Number(value) || 25);
+    }
+    this.detailPage.set(1);
+    this.loadDetails();
+  }
+
+  protected pageSizeLabel(size: number | 'all'): string {
+    return size === 'all' ? 'All' : String(size);
+  }
+
+  protected pageSizeSelectValue(): number | 'all' {
+    return this.detailPageSize() === 0 ? 'all' : this.detailPageSize();
+  }
+
+  protected firstDetailPage(): void {
+    if (this.detailPage() <= 1) return;
     this.detailPage.set(1);
     this.loadDetails();
   }
 
   protected prevDetailPage(): void {
+    if (this.detailPage() <= 1) return;
     this.detailPage.update((p) => Math.max(1, p - 1));
     this.loadDetails();
   }
 
   protected nextDetailPage(): void {
+    if (this.detailPage() >= this.detailTotalPages()) return;
     this.detailPage.update((p) => Math.min(this.detailTotalPages(), p + 1));
+    this.loadDetails();
+  }
+
+  protected lastDetailPage(): void {
+    const last = this.detailTotalPages();
+    if (this.detailPage() >= last) return;
+    this.detailPage.set(last);
     this.loadDetails();
   }
 
@@ -388,12 +446,14 @@ export class CopyScanStatusComponent implements OnInit {
     if (!stage) return;
     this.detailLoading.set(true);
     this.detailError.set('');
+    const pageSizeParam =
+      this.detailPageSize() === 0 ? 'all' : String(this.effectiveDetailPageSize());
     let params = new HttpParams()
       .set('year', this.year())
       .set('level', this.level())
       .set('stage', stage)
       .set('page', String(this.detailPage()))
-      .set('pageSize', String(this.detailPageSize()));
+      .set('pageSize', pageSizeParam);
     const q = this.detailSearch().trim();
     if (q) params = params.set('search', q);
 

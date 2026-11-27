@@ -191,23 +191,44 @@
 
       @if (detailTotalRows() > 0) {
         <div class="pager">
-          <span class="pager__info">
-            Showing {{ detailPageStart() | number }}–{{ detailPageEnd() | number }} of
-            {{ detailTotalRows() | number }}
-          </span>
+          <div class="pager__info">
+            <span>
+              Showing {{ detailPageStart() | number }}–{{ detailPageEnd() | number }} of
+              {{ detailTotalRows() | number }}
+            </span>
+            @if (detailTotalCopies()) {
+              <strong class="pager__sum">Total copies: {{ detailTotalCopies() | number }}</strong>
+            }
+            @if (detailPageSum() != null) {
+              <span class="pager__sum pager__sum--page">
+                {{ detailPageSumLabel() }}: {{ detailPageSum()! | number }}
+              </span>
+            }
+            @if (detailPageSize() === 0 && detailTotalRows() > 10000) {
+              <span class="pager__sum pager__sum--page">All capped at 10,000 rows</span>
+            }
+          </div>
           <div class="pager__actions">
             <label class="pager__size">
               <span>Rows / page</span>
               <select
-                [ngModel]="detailPageSize()"
+                [ngModel]="pageSizeSelectValue()"
                 (ngModelChange)="onDetailPageSizeChange($event)"
                 [disabled]="detailLoading()"
               >
                 @for (size of detailPageSizeOptions; track size) {
-                  <option [ngValue]="size">{{ size }}</option>
+                  <option [ngValue]="size">{{ pageSizeLabel(size) }}</option>
                 }
               </select>
             </label>
+            <button
+              type="button"
+              class="btn"
+              (click)="firstDetailPage()"
+              [disabled]="detailPage() <= 1 || detailLoading()"
+            >
+              First
+            </button>
             <button type="button" class="btn" (click)="prevDetailPage()" [disabled]="detailPage() <= 1 || detailLoading()">
               Previous
             </button>
@@ -219,6 +240,14 @@
               [disabled]="detailPage() >= detailTotalPages() || detailLoading()"
             >
               Next
+            </button>
+            <button
+              type="button"
+              class="btn"
+              (click)="lastDetailPage()"
+              [disabled]="detailPage() >= detailTotalPages() || detailLoading()"
+            >
+              Last
             </button>
           </div>
         </div>

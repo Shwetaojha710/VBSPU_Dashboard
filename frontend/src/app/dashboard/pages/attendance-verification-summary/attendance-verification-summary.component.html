@@ -162,9 +162,9 @@
       </span>
       <label class="page-size">
         <span>Rows</span>
-        <select [ngModel]="pageSize()" (ngModelChange)="onPageSizeChange($event)" name="pageSize">
+        <select [ngModel]="pageSizeSelectValue()" (ngModelChange)="onPageSizeChange($event)" name="pageSize">
           @for (n of pageSizeOptions; track n) {
-            <option [ngValue]="n">{{ n }}</option>
+            <option [ngValue]="n">{{ pageSizeLabel(n) }}</option>
           }
         </select>
       </label>
@@ -219,10 +219,16 @@
       </table>
     </div>
 
-    @if (totalRecord() > pageSize()) {
+    @if (totalRecord() > effectivePageSize()) {
       <div class="pager">
-        <span>Page {{ page() }} / {{ totalPages() }}</span>
+        <span>
+          Page {{ page() }} / {{ totalPages() }}
+          · Total rows: {{ totalRecord() | number }}
+        </span>
         <div class="pager__actions">
+          <button type="button" class="btn btn--page" (click)="firstPage()" [disabled]="page() <= 1 || loadingRows()">
+            First
+          </button>
           <button type="button" class="btn btn--page" (click)="prevPage()" [disabled]="page() <= 1 || loadingRows()">
             Previous
           </button>
@@ -233,6 +239,14 @@
             [disabled]="page() >= totalPages() || loadingRows()"
           >
             Next
+          </button>
+          <button
+            type="button"
+            class="btn btn--page"
+            (click)="lastPage()"
+            [disabled]="page() >= totalPages() || loadingRows()"
+          >
+            Last
           </button>
         </div>
       </div>

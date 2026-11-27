@@ -1,3 +1,4 @@
+import { DecimalPipe } from '@angular/common';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -55,7 +56,7 @@ interface AttendanceFilters {
 /** Exam Attendance — CentreWiseAttendanceReport with filters, KPIs, table, Excel export. */
 @Component({
   selector: 'app-exam-attendance',
-  imports: [RouterLink, FormsModule],
+  imports: [RouterLink, FormsModule, DecimalPipe],
   templateUrl: './exam-attendance.component.html',
   styleUrl: './exam-attendance.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -80,8 +81,9 @@ export class ExamAttendanceComponent implements OnInit {
   protected readonly error = signal('');
   protected readonly searchQuery = signal('');
   protected readonly page = signal(1);
+  /** 0 = All rows on one page. */
   protected readonly pageSize = signal(25);
-  protected readonly pageSizeOptions = [25, 50, 100];
+  protected readonly pageSizeOptions: Array<number | 'all'> = [25, 50, 100, 'all'];
 
   protected readonly filteredRows = computed(() => {
     const q = this.searchQuery().trim().toLowerCase();
@@ -103,14 +105,20 @@ export class ExamAttendanceComponent implements OnInit {
     };
   });
 
+  protected readonly effectivePageSize = computed(() => {
+    const size = this.pageSize();
+    if (size === 0) return Math.max(this.filteredRows().length, 1);
+    return size;
+  });
+
   protected readonly totalPages = computed(() => {
     const total = this.filteredRows().length;
-    const size = this.pageSize();
+    const size = this.effectivePageSize();
     return total === 0 ? 1 : Math.ceil(total / size);
   });
 
   protected readonly pagedRows = computed(() => {
-    const size = this.pageSize();
+    const size = this.effectivePageSize();
     const current = Math.min(this.page(), this.totalPages());
     const start = (current - 1) * size;
     return this.filteredRows().slice(start, start + size);
@@ -118,12 +126,12 @@ export class ExamAttendanceComponent implements OnInit {
 
   protected readonly pageStart = computed(() => {
     if (!this.filteredRows().length) return 0;
-    return (Math.min(this.page(), this.totalPages()) - 1) * this.pageSize() + 1;
+    return (Math.min(this.page(), this.totalPages()) - 1) * this.effectivePageSize() + 1;
   });
 
   protected readonly pageEnd = computed(() => {
     if (!this.filteredRows().length) return 0;
-    return Math.min(this.pageStart() + this.pageSize() - 1, this.filteredRows().length);
+    return Math.min(this.pageStart() + this.effectivePageSize() - 1, this.filteredRows().length);
   });
 
   protected filters: AttendanceFilters = {
@@ -228,8 +236,17 @@ export class ExamAttendanceComponent implements OnInit {
   }
 
   protected onPageSizeChange(value: string | number): void {
-    this.pageSize.set(Number(value) || 25);
+    if (value === 'all' || value === 'All') this.pageSize.set(0);
+    else this.pageSize.set(Number(value) || 25);
     this.page.set(1);
+  }
+
+  protected pageSizeLabel(size: number | 'all'): string {
+    return size === 'all' ? 'All' : String(size);
+  }
+
+  protected pageSizeSelectValue(): number | 'all' {
+    return this.pageSize() === 0 ? 'all' : this.pageSize();
   }
 
   protected goToPage(page: number): void {
@@ -238,12 +255,20 @@ export class ExamAttendanceComponent implements OnInit {
     this.page.set(next);
   }
 
+  protected firstPage(): void {
+    this.goToPage(1);
+  }
+
   protected prevPage(): void {
     this.goToPage(this.page() - 1);
   }
 
   protected nextPage(): void {
     this.goToPage(this.page() + 1);
+  }
+
+  protected lastPage(): void {
+    this.goToPage(this.totalPages());
   }
 
   protected exportExcel(): void {

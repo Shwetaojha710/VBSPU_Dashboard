@@ -88,8 +88,10 @@ export class AttendanceVerificationSummaryComponent implements OnInit {
   protected readonly error = signal('');
   protected readonly searchQuery = signal('');
   protected readonly page = signal(1);
+  /** 0 = All (capped at 5,000 server-side). */
   protected readonly pageSize = signal(40);
-  protected readonly pageSizeOptions = [25, 40, 50, 100];
+  protected readonly pageSizeOptions: Array<number | 'all'> = [25, 40, 50, 100, 'all'];
+  private static readonly ALL_PAGE_SIZE = 5000;
 
   protected filters = {
     examDate: '',
@@ -100,15 +102,29 @@ export class AttendanceVerificationSummaryComponent implements OnInit {
 
   protected readonly busy = computed(() => this.loading() || this.loadingFilters());
 
-  protected readonly totalPages = computed(() => Math.max(1, Math.ceil(this.totalRecord() / this.pageSize())));
+  protected readonly effectivePageSize = computed(() => {
+    const size = this.pageSize();
+    if (size === 0) {
+      const total = this.totalRecord();
+      return Math.min(
+        Math.max(total || AttendanceVerificationSummaryComponent.ALL_PAGE_SIZE, 1),
+        AttendanceVerificationSummaryComponent.ALL_PAGE_SIZE
+      );
+    }
+    return size;
+  });
+
+  protected readonly totalPages = computed(() =>
+    Math.max(1, Math.ceil(this.totalRecord() / this.effectivePageSize()))
+  );
 
   protected readonly pageStart = computed(() => {
     if (!this.totalRecord()) return 0;
-    return (Math.min(this.page(), this.totalPages()) - 1) * this.pageSize() + 1;
+    return (Math.min(this.page(), this.totalPages()) - 1) * this.effectivePageSize() + 1;
   });
 
   protected readonly pageEnd = computed(() =>
-    Math.min(this.pageStart() + this.pageSize() - 1, this.totalRecord())
+    Math.min(this.pageStart() + this.effectivePageSize() - 1, this.totalRecord())
   );
 
   ngOnInit(): void {
@@ -160,7 +176,22 @@ export class AttendanceVerificationSummaryComponent implements OnInit {
   }
 
   protected onPageSizeChange(value: number | string): void {
-    this.pageSize.set(Number(value) || 40);
+    if (value === 'all' || value === 'All') this.pageSize.set(0);
+    else this.pageSize.set(Number(value) || 40);
+    this.page.set(1);
+    this.loadReport(false);
+  }
+
+  protected pageSizeLabel(size: number | 'all'): string {
+    return size === 'all' ? 'All' : String(size);
+  }
+
+  protected pageSizeSelectValue(): number | 'all' {
+    return this.pageSize() === 0 ? 'all' : this.pageSize();
+  }
+
+  protected firstPage(): void {
+    if (this.page() <= 1) return;
     this.page.set(1);
     this.loadReport(false);
   }
@@ -174,6 +205,13 @@ export class AttendanceVerificationSummaryComponent implements OnInit {
   protected nextPage(): void {
     if (this.page() >= this.totalPages()) return;
     this.page.update((p) => p + 1);
+    this.loadReport(false);
+  }
+
+  protected lastPage(): void {
+    const last = this.totalPages();
+    if (this.page() >= last) return;
+    this.page.set(last);
     this.loadReport(false);
   }
 
@@ -241,9 +279,10 @@ export class AttendanceVerificationSummaryComponent implements OnInit {
     else this.loadingRows.set(true);
     this.error.set('');
 
+    const pageSizeParam = this.pageSize() === 0 ? 'all' : String(this.effectivePageSize());
     let params = new HttpParams()
       .set('page', String(this.page()))
-      .set('pageSize', String(this.pageSize()));
+      .set('pageSize', pageSizeParam);
     if (this.filters.examDate) params = params.set('examDate', this.filters.examDate);
     if (this.filters.verifiedDate) params = params.set('verifiedDate', this.filters.verifiedDate);
     if (this.filters.courseTypeId) params = params.set('courseTypeId', String(this.filters.courseTypeId));
@@ -260,7 +299,8 @@ export class AttendanceVerificationSummaryComponent implements OnInit {
           this.rows.set(res.rows ?? []);
           this.totalRecord.set(res.totalRecord ?? 0);
           if (res.page) this.page.set(res.page);
-          if (res.pageSize) this.pageSize.set(res.pageSize);
+          // Keep local "All" (0); don't overwrite with capped server pageSize.
+          if (res.pageSize && this.pageSize() !== 0) this.pageSize.set(res.pageSize);
           this.loading.set(false);
           this.loadingRows.set(false);
         },
